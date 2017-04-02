@@ -5,4 +5,6 @@ img
 movies
 js/libs
 js/*.js
+!js/main.js
+!js/plugins.js
 js/.idea
