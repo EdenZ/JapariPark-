@@ -3,3 +3,5 @@ fonts
 icon
 img
 movies
+js/libs
+js/*.js
