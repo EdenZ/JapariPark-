@@ -15,3 +15,4 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
         }
     }
 };
+
