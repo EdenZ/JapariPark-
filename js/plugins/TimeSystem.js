@@ -19,11 +19,17 @@ DayTimeSystem.prototype.getDay = function () {
 
 DayTimeSystem.prototype.processDate = function () {
     this.day++;
+    this.onDayChange();
     if (dayTimeSystemParams['debug'] === 'true') {
         $gameMessage.add('今天是第' + String(this.day)+'天');
     }
 };
 
+DayTimeSystem.prototype.onDayChange = function () {
+    // Event
+};
+
+//=============================================================================
 // Add my window to scene map when it start
 var _Scene_Map_start = Scene_Map.prototype.start;
 Scene_Map.prototype.start = function() {
@@ -37,12 +43,11 @@ var _Scene_Map_update = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     _Scene_Map_update.call(this);
     this._day_Window.refresh();
-}
+};
 
 function Day_Window() {
     this.initialize.apply(this, arguments);
-};
-
+}
 Day_Window.prototype = Object.create(Window_Base.prototype);
 Day_Window.prototype.constructor = Day_Window;
 
@@ -57,7 +62,7 @@ Day_Window.prototype.initialize = function(x, y) {
 
 // My window update function
 Day_Window.prototype.refresh = function() {
-    if (this._lastDay == _DayTimeSystem.day) {
+    if (this._lastDay === _DayTimeSystem.day) {
         return;
     }
     this.contents.clear();
@@ -65,3 +70,11 @@ Day_Window.prototype.refresh = function() {
     var day_text = '第' + String(_DayTimeSystem.day) + '天';
     this.contents.drawText(day_text, 10, 0, 80, 40, 'left');
 };
+
+var _alias_onDayChange = DayTimeSystem.prototype.onDayChange;
+DayTimeSystem.prototype.onDayChange = function () {
+    _alias_onDayChange.call(this);
+    this.hide();
+    $gamePlayer.wait(300);
+    this.show();
+}
