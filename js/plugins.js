@@ -3,5 +3,5 @@
 var $plugins =
 [
 {"name":"FarmingSystem","status":true,"description":"","parameters":{}},
-{"name":"TimeSystem","status":true,"description":"Time system","parameters":{"debug":"true"}}
+{"name":"TimeSystem","status":true,"description":"Time system","parameters":{"debug":"false"}}
 ];
