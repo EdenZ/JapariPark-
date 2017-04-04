@@ -56,10 +56,13 @@ FriendFarmSystem.prototype.isDone = function (eventId) {
     return _friendFarmSystem._cropStates[eventId].done;
 };
 
-var _alias_onDayChange = DayTimeSystem.prototype.onDayChange;
+var _farm_system_onDayChange = DayTimeSystem.prototype.onDayChange;
 DayTimeSystem.prototype.onDayChange = function () {
-    _alias_onDayChange.call(this);
+    _farm_system_onDayChange.call(this);
     for(var n = 0; n <_friendFarmSystem._cropStates.length ; n++) {
+        if (_friendFarmSystem._cropStates[n] === 0) {
+            continue;
+        }
         _friendFarmSystem._cropStates[n].dayGroth = this.getDay() - _friendFarmSystem._cropStates[n].startDate;
         if (_friendFarmSystem._cropStates[n].dayGroth === _friendFarmSystem._cropStates[n].type.dayRequired) {
             _friendFarmSystem._cropStates[n].done = true;

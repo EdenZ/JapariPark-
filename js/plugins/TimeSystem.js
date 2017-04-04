@@ -37,7 +37,6 @@ Scene_Map.prototype.start = function() {
     _Scene_Map_start.call(this);
     this._day_Window = new Day_Window(0, 0);
     _dayTimeSystem._day_Window = this._day_Window;
-    console.log("_day_Window defined");
     this.addWindow(this._day_Window);
 };
 
@@ -55,7 +54,6 @@ Scene_Map.prototype.update = function() {
 var alias_Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
 Game_Screen.prototype.startFadeOut = function(duration) {
     alias_Game_Screen_startFadeOut.call(this, duration);
-    console.log("out called");
     _dayTimeSystem._day_Window.hide();
 };
 
@@ -101,9 +99,9 @@ Day_Window.prototype.refresh = function() {
  * @type {*}
  * @private
  */
-var _alias_onDayChange = DayTimeSystem.prototype.onDayChange;
+var _day_window_onDayChange = DayTimeSystem.prototype.onDayChange;
 DayTimeSystem.prototype.onDayChange = function () {
-    _alias_onDayChange.call(this);
+    _day_window_onDayChange.call(this);
 };
 
 //=============================================================================
