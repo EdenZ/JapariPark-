@@ -42,7 +42,8 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
 
 FriendFarmSystem.prototype.harvest = function (eventId) {
     // $gameParty.gainItem($dataItems[1], 2);
-    // this._cropStates[eventId] = 0;
+    this._cropStates[eventId] = 0;
+    $gameMessage.add('什么都没有收获！');
 };
 
 FriendFarmSystem.prototype.onEventCall = function (eventId) {
@@ -52,7 +53,7 @@ FriendFarmSystem.prototype.onEventCall = function (eventId) {
     }
     if (this._cropStates[eventId].done) {
         this.harvest(eventId);
-        $gameMessage.add('什么都没有收获！');
+        
         return;
     }
     $gameMessage.add(this._cropStates[eventId].type.name + ', ' + this._cropStates[eventId].dayGroth + '天');
