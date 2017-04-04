@@ -9,12 +9,42 @@
  */
 
 //=============================================================================
+//Constant
+var GAME_TIME_TINTS = [
+    [30, 0, 40, 165], 	// => 0 hour
+    [20, 0, 30, 165], 	// => 1 hour
+    [20, 0, 30, 155], 	// => 2 hour
+    [10, 0, 30, 145], 	// => 3 hour
+    [10, 0, 20, 125], 	// => 4 hour
+    [0, 0, 20, 125], 	// => 5 hour
+    [75, 20, 20, 115], 	// => 6 hour
+    [100, 30, 10,105],  // => 7 hour
+    [75, 20, 10, 85], 	// => 8 hour
+    [0, 0, 0, 55], 		// => 9 hour
+    [0, 0, 0, 30], 		// => 10 hour
+    [0, 0, 0, 10], 		// => 11 hour
+    [0, 0, 0, 0], 		// => 12 hour
+    [0, 0, 0, 0], 		// => 13 hour
+    [0, 0, 0, 0], 		// => 14 hour
+    [0, 0, 0, 5], 		// => 15 hour
+    [0, 0, 0, 15], 		// => 16 hour
+    [0, 0, 10, 45], 	// => 17 hour
+    [75, 20, 20, 85], 	// => 18 hour
+    [100, 40, 30, 105], // => 19 hour
+    [75, 20, 40, 125], 	// => 20 hour
+    [10, 0, 45, 140], 	// => 21 hour
+    [20, 0, 45, 145], 	// => 22 hour
+    [20, 0, 50, 160]	// => 23 hour
+];
+var INDOOR_MAPID = [3, 4, 6];
+
+//=============================================================================
 //Core basic
 var dayTimeSystemParams = PluginManager.parameters('TimeSystem');
 
 var DayTimeSystem = function() {
     this.day = 1;
-    this.hour = 0;
+    this.hour = 6;
 };
 var _dayTimeSystem = new DayTimeSystem();
 
@@ -47,9 +77,13 @@ var _time_system_gameMap_setup = Game_Map.prototype.setup;
 Game_Map.prototype.setup = function(mapId) {
     _time_system_gameMap_setup.call(this, mapId);
     if (init_game_start) {
-        console.log('good');
         _dayTimeSystem._timer._work = true;
         init_game_start = false;
+        if (INDOOR_MAPID.indexOf(this._mapId) === -1) {
+            this.setTint();
+        } else {
+            $gameScreen.startTint([0, 0, 0, 0], 0);
+        }
     }
 };
 
@@ -65,7 +99,7 @@ DayTimeSystem.prototype.getDay = function () {
 
 DayTimeSystem.prototype.processDate = function () {
     this.day++;
-    this.hour = 0;
+    this.hour = 6;
     this.onDayChange();
 };
 
@@ -80,7 +114,7 @@ DayTimeSystem.prototype.getHour = function () {
 };
 
 DayTimeSystem.prototype.processHour = function () {
-    if (this.hour >= 24) {
+    if (this.hour >= 23) {
         this.processDate();
     } else {
         this.hour++;
@@ -88,8 +122,28 @@ DayTimeSystem.prototype.processHour = function () {
     this.onHourChange();
 };
 
+DayTimeSystem.prototype.setTint = function () {
+    $gameScreen.startTint(GAME_TIME_TINTS[this.getHour()], 0);
+};
+
 DayTimeSystem.prototype.onHourChange = function () {
-    // Event
+    //Tint world
+    if (INDOOR_MAPID.indexOf($gameMap._mapId) === -1) {
+        this.setTint();
+    } else {
+        $gameScreen.startTint([0, 0, 0, 0], 0);
+    }
+};
+
+//=============================================================================
+var _timeSystem_GamePlayer_reserveTransfer = Game_Player.prototype.reserveTransfer;
+Game_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {
+    _timeSystem_GamePlayer_reserveTransfer.call(this, mapId, x, y, d, fadeType);
+    if (INDOOR_MAPID.indexOf(mapId) === -1) {
+        _dayTimeSystem.setTint();
+    } else {
+        $gameScreen.startTint([0, 0, 0, 0], 0);
+    }
 };
 
 //=============================================================================
@@ -158,7 +212,6 @@ Day_Window.prototype.refresh = function() {
         this.contents.drawText(day_text, 0, 0, 70, 40, 'left');
         this.contents.drawText(hour_text, 120, 0, 70, 40, 'left');
     }
-
 };
 
 /**

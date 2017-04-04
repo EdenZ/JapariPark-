@@ -38,15 +38,42 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
         case this._cropGroup._carrot.name:
             this._cropStates[eventId] = new CropState(this._cropGroup._carrot);
             $gameParty.loseItem($dataItems[this._cropGroup._carrot.seedId], 1);
+            this.drawCropTile(eventId, 88);
             break;
 
         case this._cropGroup._potato.name:
             this._cropStates[eventId] = new CropState(this._cropGroup._potato);
             $gameParty.loseItem($dataItems[this._cropGroup._potato.seedId], 1);
+            this.drawCropTile(eventId, 88);
             break;
         case this._cropGroup._blackcurrant.name:
             this._cropStates[eventId] = new CropState(this._cropGroup._blackcurrant);
             $gameParty.loseItem($dataItems[this._cropGroup._blackcurrant.seedId], 1);
+            this.drawCropTile(eventId, 88);
+    }
+};
+
+FriendFarmSystem.prototype.drawCropTile = function (eventId, tileId) {
+    if ($gameMap._mapId === 1) {
+        $gameMap._events[eventId]._tileId = tileId;
+    }
+};
+
+
+var _farm_system_gameMap_setup = Game_Map.prototype.setup;
+Game_Map.prototype.setup = function(mapId) {
+    _farm_system_gameMap_setup.call(this, mapId);
+    if (mapId === 1) {
+        for(var n = 0; n <_friendFarmSystem._cropStates.length ; n++) {
+            if (_friendFarmSystem._cropStates[n] === 0) {
+                continue;
+            }
+            if (_friendFarmSystem._cropStates[n].done) {
+                _friendFarmSystem.drawCropTile(n, _friendFarmSystem._cropStates[n].type.finalTileId);
+                continue;
+            }
+            _friendFarmSystem.drawCropTile(n, 88);
+        }
     }
 };
 
@@ -59,6 +86,7 @@ FriendFarmSystem.prototype.harvest = function (eventId) {
     $gameParty.gainItem($dataItems[this._cropStates[eventId].type.productId], amount);
     $gameMessage.add('收获了' + String(amount) + '个' + this._cropStates[eventId].type.name);
     this._cropStates[eventId] = 0;
+    this.drawCropTile(eventId, 0);
 };
 
 /**
@@ -125,8 +153,10 @@ DayTimeSystem.prototype.onDayChange = function () {
             continue;
         }
         _friendFarmSystem._cropStates[n].dayGroth = this.getDay() - _friendFarmSystem._cropStates[n].startDate + 1;
+        _friendFarmSystem._cropStates[n]._daily = false;
         if (_friendFarmSystem._cropStates[n].dayGroth >= _friendFarmSystem._cropStates[n].type.dayRequired) {
             _friendFarmSystem._cropStates[n].done = true;
+            _friendFarmSystem.drawCropTile(n, _friendFarmSystem._cropStates[n].type.finalTileId);
         }
     }
 };
@@ -140,6 +170,7 @@ var CropState = function (type) {
     this.startDate = _dayTimeSystem.getDay();
     this.type = type;
     this.dayGroth = 1;
+    this._daily = false;
     this.done = false;
 };
 //=============================================================================
@@ -152,9 +183,10 @@ var CropState = function (type) {
  * @param {Number} productPrice
  * @param {Number} seedId
  * @param {Number} productId
+ * @param {Number} finalTileId
  * @constructor
  */
-var CropType = function (name, seedPrice, amount, dayRequired, productPrice, seedId, productId) {
+var CropType = function (name, seedPrice, amount, dayRequired, productPrice, seedId, productId, finalTileId) {
     this.name = name;
     this.dayRequired = dayRequired;
     this.seedPrice = seedPrice;
@@ -162,8 +194,9 @@ var CropType = function (name, seedPrice, amount, dayRequired, productPrice, see
     this.productPrice = productPrice;
     this.seedId = seedId;
     this.productId = productId;
+    this.finalTileId = finalTileId;
 };
 _friendFarmSystem._cropGroup = {};
-_friendFarmSystem._cropGroup._carrot = new CropType('贾巴利萝卜', 5, 5, 2, 2, 2, 3);
-_friendFarmSystem._cropGroup._potato = new CropType('贾巴利土豆', 30, 4, 5, 15, 4, 5);
-_friendFarmSystem._cropGroup._blackcurrant = new CropType('贾巴利黑加仑', 120, 10, 10, 25, 6, 7);
+_friendFarmSystem._cropGroup._carrot = new CropType('贾巴利萝卜', 5, 5, 2, 2, 2, 3, 109);
+_friendFarmSystem._cropGroup._potato = new CropType('贾巴利土豆', 30, 4, 5, 15, 4, 5, 110);
+_friendFarmSystem._cropGroup._blackcurrant = new CropType('贾巴利黑加仑', 120, 10, 10, 25, 6, 7, 111);
