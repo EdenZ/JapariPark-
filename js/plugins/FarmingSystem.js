@@ -36,14 +36,17 @@ var _friendFarmSystem = new FriendFarmSystem();
 FriendFarmSystem.prototype.seeding = function (eventId, type) {
     switch (type) {
         case this._cropGroup._carrot.name:
-            this._cropStates[eventId] = new CropState(_friendFarmSystem._cropGroup._carrot);
+            this._cropStates[eventId] = new CropState(this._cropGroup._carrot);
+            $gameParty.loseItem($dataItems[this._cropGroup._carrot.seedId], 1);
             break;
 
         case this._cropGroup._potato.name:
-            this._cropStates[eventId] = new CropState(_friendFarmSystem._cropGroup._potato);
+            this._cropStates[eventId] = new CropState(this._cropGroup._potato);
+            $gameParty.loseItem($dataItems[this._cropGroup._potato.seedId], 1);
             break;
         case this._cropGroup._blackcurrant.name:
-            this._cropStates[eventId] = new CropState(_friendFarmSystem._cropGroup._blackcurrant);
+            this._cropStates[eventId] = new CropState(this._cropGroup._blackcurrant);
+            $gameParty.loseItem($dataItems[this._cropGroup._blackcurrant.seedId], 1);
     }
 };
 
@@ -52,9 +55,10 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
  * @param {Number} eventId
  */
 FriendFarmSystem.prototype.harvest = function (eventId) {
-    // $gameParty.gainItem($dataItems[1], 2);
+    var amount = this._cropStates[eventId].type.amountOfProduct;
+    $gameParty.gainItem($dataItems[this._cropStates[eventId].type.productId], amount);
+    $gameMessage.add('收获了' + String(amount) + '个' + this._cropStates[eventId].type.name);
     this._cropStates[eventId] = 0;
-    $gameMessage.add('什么都没有收获！');
 };
 
 /**
@@ -80,10 +84,17 @@ FriendFarmSystem.prototype.onEventCall = function (eventId) {
  */
 FriendFarmSystem.prototype.chooseSeed = function (eventId) {
     var choices = [];
-    for (var cropInfo in _friendFarmSystem._cropGroup) {
-        if ($gameParty.hasItem(cropInfo.seedId)) {
-            choices.push(cropInfo.name);
+    for (var cropKey in this._cropGroup) {
+        if (!this._cropGroup.hasOwnProperty(cropKey)) continue;
+
+        var obj = this._cropGroup[cropKey];
+        if ($gameParty.hasItem($dataItems[obj.seedId])) {
+            choices.push(obj.name);
         }
+    }
+    if (choices.length === 0) {
+        $gameMessage.add('没有种子');
+        return;
     }
     choices.push('取消');
 
@@ -104,14 +115,17 @@ FriendFarmSystem.prototype.isDone = function (eventId) {
 };
 
 var _farm_system_onDayChange = DayTimeSystem.prototype.onDayChange;
+/**
+ * 日期变更
+ */
 DayTimeSystem.prototype.onDayChange = function () {
     _farm_system_onDayChange.call(this);
     for(var n = 0; n <_friendFarmSystem._cropStates.length ; n++) {
         if (_friendFarmSystem._cropStates[n] === 0) {
             continue;
         }
-        _friendFarmSystem._cropStates[n].dayGroth = this.getDay() - _friendFarmSystem._cropStates[n].startDate;
-        if (_friendFarmSystem._cropStates[n].dayGroth === _friendFarmSystem._cropStates[n].type.dayRequired) {
+        _friendFarmSystem._cropStates[n].dayGroth = this.getDay() - _friendFarmSystem._cropStates[n].startDate + 1;
+        if (_friendFarmSystem._cropStates[n].dayGroth >= _friendFarmSystem._cropStates[n].type.dayRequired) {
             _friendFarmSystem._cropStates[n].done = true;
         }
     }
@@ -133,18 +147,18 @@ var CropState = function (type) {
  * 作物种类信息
  * @param {String} name
  * @param {Number} seedPrice
- * @param {Number} product
+ * @param {Number} amount
  * @param {Number} dayRequired
  * @param {Number} productPrice
  * @param {Number} seedId
  * @param {Number} productId
  * @constructor
  */
-var CropType = function (name, seedPrice, product, dayRequired, productPrice, seedId, productId) {
+var CropType = function (name, seedPrice, amount, dayRequired, productPrice, seedId, productId) {
     this.name = name;
     this.dayRequired = dayRequired;
     this.seedPrice = seedPrice;
-    this.product = product;
+    this.amountOfProduct = amount;
     this.productPrice = productPrice;
     this.seedId = seedId;
     this.productId = productId;
