@@ -1,32 +1,94 @@
 /*:
  * @plugindesc Time system
  * @author Eden
+ * @help
  *
  * @param debug
  * @desc true of false
  * @default false
  */
 
+//=============================================================================
+//Core basic
 var dayTimeSystemParams = PluginManager.parameters('TimeSystem');
 
 var DayTimeSystem = function() {
     this.day = 1;
+    this.hour = 0;
 };
 var _dayTimeSystem = new DayTimeSystem();
 
+//=============================================================================
+//Timer
+function SystemTimer() {
+    this._work = false;
+    this._count = 0;
+    this.start = function () {
+        if (_dayTimeSystem._timer._work) {
+            _dayTimeSystem._timer._count ++;
+            _dayTimeSystem._timer.onTimeChange();
+        }
+        setTimeout(_dayTimeSystem._timer.start, 100);
+    };
+    this.onTimeChange = function () {
+        if (this._count >= 60) {
+            _dayTimeSystem.processHour();
+            this._count = 0;
+        }
+    };
+}
+_dayTimeSystem._timer = new SystemTimer();
+var init_game_start = true;
+_dayTimeSystem._timer.start();
+
+//=============================================================================
+
+var _time_system_gameMap_setup = Game_Map.prototype.setup;
+Game_Map.prototype.setup = function(mapId) {
+    _time_system_gameMap_setup.call(this, mapId);
+    if (init_game_start) {
+        console.log('good');
+        _dayTimeSystem._timer._work = true;
+        init_game_start = false;
+    }
+};
+
+//=============================================================================
+//Day
+/**
+ * 获取当前日期
+ * @returns {number}
+ */
 DayTimeSystem.prototype.getDay = function () {
     return this.day;
 };
 
 DayTimeSystem.prototype.processDate = function () {
     this.day++;
+    this.hour = 0;
     this.onDayChange();
-    if (dayTimeSystemParams['debug'] === 'true') {
-        $gameMessage.add('今天是第' + String(this.day)+'天');
-    }
 };
 
 DayTimeSystem.prototype.onDayChange = function () {
+    // Event
+};
+//=============================================================================
+//Hour
+
+DayTimeSystem.prototype.getHour = function () {
+    return this.hour;
+};
+
+DayTimeSystem.prototype.processHour = function () {
+    if (this.hour >= 24) {
+        this.processDate();
+    } else {
+        this.hour++;
+    }
+    this.onHourChange();
+};
+
+DayTimeSystem.prototype.onHourChange = function () {
     // Event
 };
 
@@ -75,23 +137,28 @@ Day_Window.prototype = Object.create(Window_Base.prototype);
 Day_Window.prototype.constructor = Day_Window;
 
 Day_Window.prototype.initialize = function(x, y) {
-    Window_Base.prototype.initialize.call(this, x, y, 140, 80);
+    Window_Base.prototype.initialize.call(this, x, y, 240, 80);
     //this.drawIcon(...);
     //this.drawText(...);
     //...
     this._lastDay = 0;
+    this._lastHour = -1;
     this.refresh();
 };
 
 // My window update function
 Day_Window.prototype.refresh = function() {
-    if (this._lastDay === _dayTimeSystem.day) {
-        return;
+    if (this._lastDay !== _dayTimeSystem.day || this._lastHour !== _dayTimeSystem.getHour()) {
+        this._lastDay = _dayTimeSystem.getDay();
+        this._lastHour = _dayTimeSystem.getHour();
+        this.contents.clear();
+        //Update
+        var day_text = '第' + String(_dayTimeSystem.day) + '天';
+        var hour_text = String(_dayTimeSystem.getHour()) + ' 点';
+        this.contents.drawText(day_text, 0, 0, 70, 40, 'left');
+        this.contents.drawText(hour_text, 120, 0, 70, 40, 'left');
     }
-    this.contents.clear();
-    //Update
-    var day_text = '第' + String(_dayTimeSystem.day) + '天';
-    this.contents.drawText(day_text, 10, 0, 80, 40, 'left');
+
 };
 
 /**
