@@ -19,6 +19,7 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
 };
 
 //=============================================================================
+// Farming System class
 var FriendFarmSystem = function () {
     this._cropStates = [];
     for (var n = 0; n <= 100; n++) {
@@ -26,26 +27,40 @@ var FriendFarmSystem = function () {
     }
 };
 var _friendFarmSystem = new FriendFarmSystem();
-console.log(_friendFarmSystem._cropStates);
 
-
+/**
+ * 播种
+ * @param {Number} eventId
+ * @param {Number} type
+ */
 FriendFarmSystem.prototype.seeding = function (eventId, type) {
     switch (type) {
-        case 0:
-            this._cropStates[eventId] = new CropState(_friendFarmSystem._carrotCrop);
+        case this._cropGroup._carrot.name:
+            this._cropStates[eventId] = new CropState(_friendFarmSystem._cropGroup._carrot);
             break;
 
-        case 1:
-            this._cropStates[eventId] = new CropState(_friendFarmSystem._catCrop);
+        case this._cropGroup._potato.name:
+            this._cropStates[eventId] = new CropState(_friendFarmSystem._cropGroup._potato);
+            break;
+        case this._cropGroup._blackcurrant.name:
+            this._cropStates[eventId] = new CropState(_friendFarmSystem._cropGroup._blackcurrant);
     }
 };
 
+/**
+ * 收获
+ * @param {Number} eventId
+ */
 FriendFarmSystem.prototype.harvest = function (eventId) {
     // $gameParty.gainItem($dataItems[1], 2);
     this._cropStates[eventId] = 0;
     $gameMessage.add('什么都没有收获！');
 };
 
+/**
+ * Event把柄
+ * @param {Number} eventId
+ */
 FriendFarmSystem.prototype.onEventCall = function (eventId) {
     if (this._cropStates[eventId] === 0) {
         this.chooseSeed(eventId);
@@ -53,24 +68,37 @@ FriendFarmSystem.prototype.onEventCall = function (eventId) {
     }
     if (this._cropStates[eventId].done) {
         this.harvest(eventId);
-        
+
         return;
     }
     $gameMessage.add(this._cropStates[eventId].type.name + ', ' + this._cropStates[eventId].dayGroth + '天');
 };
 
+/**
+ * 选择种子窗口
+ * @param {Number} eventId
+ */
 FriendFarmSystem.prototype.chooseSeed = function (eventId) {
-    var choices = ['carrot', 'cat', 'cancel'];
-    $gameMessage.setChoices(choices, 0, 2);
-    $gameMessage.setChoiceCallback(function (choice) {
-        if (choice === 'cancel') {
-            return;
+    var choices = [];
+    for (var cropInfo in _friendFarmSystem._cropGroup) {
+        if ($gameParty.hasItem(cropInfo.seedId)) {
+            choices.push(cropInfo.name);
         }
-        _friendFarmSystem.seeding(eventId, choice);
+    }
+    choices.push('取消');
+
+    $gameMessage.setChoices(choices, 0, choices.length - 1);
+    $gameMessage.setChoiceCallback(function (choice) {
+        _friendFarmSystem.seeding(eventId, choices[choice]);
         }
     )
 };
 
+/**
+ * 此地的作物是否成熟
+ * @param {Number} eventId
+ * @returns {boolean}
+ */
 FriendFarmSystem.prototype.isDone = function (eventId) {
     return _friendFarmSystem._cropStates[eventId].done;
 };
@@ -91,19 +119,37 @@ DayTimeSystem.prototype.onDayChange = function () {
 
 /**
  * Represent crop state
- * @param type type of crop
+ * @param {Object} type type of crop
  * @constructor
  */
 var CropState = function (type) {
     this.startDate = _dayTimeSystem.getDay();
     this.type = type;
-    this.dayGroth = 0;
+    this.dayGroth = 1;
     this.done = false;
 };
 //=============================================================================
-var CropType = function (name, dayRequired) {
+/**
+ * 作物种类信息
+ * @param {String} name
+ * @param {Number} seedPrice
+ * @param {Number} product
+ * @param {Number} dayRequired
+ * @param {Number} productPrice
+ * @param {Number} seedId
+ * @param {Number} productId
+ * @constructor
+ */
+var CropType = function (name, seedPrice, product, dayRequired, productPrice, seedId, productId) {
     this.name = name;
     this.dayRequired = dayRequired;
+    this.seedPrice = seedPrice;
+    this.product = product;
+    this.productPrice = productPrice;
+    this.seedId = seedId;
+    this.productId = productId;
 };
-_friendFarmSystem._carrotCrop = new CropType('carrot', 3);
-_friendFarmSystem._catCrop = new CropType('cat', 10);
+_friendFarmSystem._cropGroup = {};
+_friendFarmSystem._cropGroup._carrot = new CropType('贾巴利萝卜', 5, 5, 2, 2, 2, 3);
+_friendFarmSystem._cropGroup._potato = new CropType('贾巴利土豆', 30, 4, 5, 15, 4, 5);
+_friendFarmSystem._cropGroup._blackcurrant = new CropType('贾巴利黑加仑', 120, 10, 10, 25, 6, 7);
