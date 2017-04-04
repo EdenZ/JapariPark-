@@ -31,29 +31,43 @@ console.log(_friendFarmSystem._cropStates);
 
 FriendFarmSystem.prototype.seeding = function (eventId, type) {
     switch (type) {
-        case 'carrot':
+        case 0:
             this._cropStates[eventId] = new CropState(_friendFarmSystem._carrotCrop);
             break;
+
+        case 1:
+            this._cropStates[eventId] = new CropState(_friendFarmSystem._catCrop);
     }
 };
 
 FriendFarmSystem.prototype.harvest = function (eventId) {
-    $gameParty.gainItem($dataItems[1], 2);
-    this._cropStates[eventId] = 0;
+    // $gameParty.gainItem($dataItems[1], 2);
+    // this._cropStates[eventId] = 0;
 };
 
 FriendFarmSystem.prototype.onEventCall = function (eventId) {
     if (this._cropStates[eventId] === 0) {
-        this.seeding(eventId, 'carrot');
-        $gameMessage.add('成功种下萝卜');
+        this.chooseSeed(eventId);
         return;
     }
     if (this._cropStates[eventId].done) {
         this.harvest(eventId);
-        $gameMessage.add('收获的萝卜突然变成2个瓶子！');
+        $gameMessage.add('什么都没有收获！');
         return;
     }
-    $gameMessage.add('播种第' + this._cropStates[eventId].dayGroth + '天');
+    $gameMessage.add(this._cropStates[eventId].type.name + ', ' + this._cropStates[eventId].dayGroth + '天');
+};
+
+FriendFarmSystem.prototype.chooseSeed = function (eventId) {
+    var choices = ['carrot', 'cat', 'cancel'];
+    $gameMessage.setChoices(choices, 0, 2);
+    $gameMessage.setChoiceCallback(function (choice) {
+        if (choice === 'cancel') {
+            return;
+        }
+        _friendFarmSystem.seeding(eventId, choice);
+        }
+    )
 };
 
 FriendFarmSystem.prototype.isDone = function (eventId) {
@@ -91,3 +105,4 @@ var CropType = function (name, dayRequired) {
     this.dayRequired = dayRequired;
 };
 _friendFarmSystem._carrotCrop = new CropType('carrot', 3);
+_friendFarmSystem._catCrop = new CropType('cat', 10);
