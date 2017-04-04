@@ -20,9 +20,13 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
 
 //=============================================================================
 var FriendFarmSystem = function () {
-    this._cropStates = [0,0,0,0];
+    this._cropStates = [];
+    for (var n = 0; n <= 100; n++) {
+        this._cropStates.push(0);
+    }
 };
 var _friendFarmSystem = new FriendFarmSystem();
+console.log(_friendFarmSystem._cropStates);
 
 
 FriendFarmSystem.prototype.seeding = function (eventId, type) {
