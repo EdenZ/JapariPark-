@@ -47,12 +47,22 @@ Scene_Map.prototype.update = function() {
     _Scene_Map_update.call(this);
     this._day_Window.refresh();
 };
+
+/**
+ * Hide day window when fade out
+ * @type {*}
+ */
 var alias_Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
 Game_Screen.prototype.startFadeOut = function(duration) {
     alias_Game_Screen_startFadeOut.call(this, duration);
     console.log("out called");
     _dayTimeSystem._day_Window.hide();
 };
+
+/**
+ * Show day window when fade out
+ * @type {*}
+ */
 var alias_Game_Screen_startFadeIn = Game_Screen.prototype.startFadeIn;
 Game_Screen.prototype.startFadeIn = function(duration) {
     alias_Game_Screen_startFadeIn.call(this, duration);
@@ -86,13 +96,14 @@ Day_Window.prototype.refresh = function() {
     this.contents.drawText(day_text, 10, 0, 80, 40, 'left');
 };
 
+/**
+ * Template
+ * @type {*}
+ * @private
+ */
 var _alias_onDayChange = DayTimeSystem.prototype.onDayChange;
 DayTimeSystem.prototype.onDayChange = function () {
     _alias_onDayChange.call(this);
-    console.log("hide Called");
-    // .prototype._day_Window.hide();
-    // $gamePlayer.wait(300);
-    // Scene_Map.prototype._day_Window.show();
 };
 
 //=============================================================================
