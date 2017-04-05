@@ -10,6 +10,7 @@
 
 //=============================================================================
 //Constant
+//色调信息
 var GAME_TIME_TINTS = [
     [30, 0, 40, 165], 	// => 0 hour
     [20, 0, 30, 165], 	// => 1 hour
@@ -18,7 +19,7 @@ var GAME_TIME_TINTS = [
     [10, 0, 20, 125], 	// => 4 hour
     [0, 0, 20, 125], 	// => 5 hour
     [75, 20, 20, 115], 	// => 6 hour
-    [100, 30, 10,105],  // => 7 hour
+    [100, 30, 10, 105],  // => 7 hour
     [75, 20, 10, 85], 	// => 8 hour
     [0, 0, 0, 55], 		// => 9 hour
     [0, 0, 0, 30], 		// => 10 hour
@@ -36,26 +37,31 @@ var GAME_TIME_TINTS = [
     [20, 0, 45, 145], 	// => 22 hour
     [20, 0, 50, 160]	// => 23 hour
 ];
+//室内地图ID
 var INDOOR_MAPID = [3, 4, 6];
 
 //=============================================================================
 //Core basic
 var dayTimeSystemParams = PluginManager.parameters('TimeSystem');
 
-var DayTimeSystem = function() {
+function DayTimeSystem () {
     this.day = 1;
     this.hour = 6;
-};
+}
 var _dayTimeSystem = new DayTimeSystem();
 
 //=============================================================================
 //Timer
+/**
+ * 内部计时器
+ * @constructor
+ */
 function SystemTimer() {
     this._work = false;
     this._count = 0;
     this.start = function () {
         if (_dayTimeSystem._timer._work) {
-            _dayTimeSystem._timer._count ++;
+            _dayTimeSystem._timer._count++;
             _dayTimeSystem._timer.onTimeChange();
         }
         setTimeout(_dayTimeSystem._timer.start, 100);
@@ -71,23 +77,29 @@ _dayTimeSystem._timer = new SystemTimer();
 var init_game_start = true;
 _dayTimeSystem._timer.start();
 
-//=============================================================================
-
+//-----------------------------------------------------------------------------
+/**
+ * 1.start timer when begin
+ * 2.set tint at the beginning of map setup
+ * @type {*}
+ * @private
+ */
 var _time_system_gameMap_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function(mapId) {
+Game_Map.prototype.setup = function (mapId) {
     _time_system_gameMap_setup.call(this, mapId);
+    //游戏开始时，计时
     if (init_game_start) {
         _dayTimeSystem._timer._work = true;
         init_game_start = false;
-        if (INDOOR_MAPID.indexOf(this._mapId) === -1) {
-            this.setTint();
-        } else {
-            $gameScreen.startTint([0, 0, 0, 0], 0);
-        }
+    }
+    if (INDOOR_MAPID.indexOf(mapId) === -1) {
+        _dayTimeSystem.setTint();
+    } else {
+        $gameScreen.startTint([0, 0, 0, 0], 0);
     }
 };
 
-//=============================================================================
+//-----------------------------------------------------------------------------
 //Day
 /**
  * 获取当前日期
@@ -97,22 +109,39 @@ DayTimeSystem.prototype.getDay = function () {
     return this.day;
 };
 
+/**
+ * 日期++
+ */
 DayTimeSystem.prototype.processDate = function () {
     this.day++;
-    this.hour = 6;
+    this.hour = 0;
     this.onDayChange();
 };
 
+DayTimeSystem.prototype.passDayBySleep = function () {
+    this.hour = 6;
+    this.processDate();
+}
+
+/**
+ * 日期变更事件
+ */
 DayTimeSystem.prototype.onDayChange = function () {
     // Event
 };
 //=============================================================================
 //Hour
-
+/**
+ * 获取小时
+ * @returns {number}
+ */
 DayTimeSystem.prototype.getHour = function () {
     return this.hour;
 };
 
+/**
+ * 小时++
+ */
 DayTimeSystem.prototype.processHour = function () {
     if (this.hour >= 23) {
         this.processDate();
@@ -122,10 +151,16 @@ DayTimeSystem.prototype.processHour = function () {
     this.onHourChange();
 };
 
+/**
+ * 根据当前时间设置色调
+ */
 DayTimeSystem.prototype.setTint = function () {
     $gameScreen.startTint(GAME_TIME_TINTS[this.getHour()], 0);
 };
 
+/**
+ * 小时变更事件
+ */
 DayTimeSystem.prototype.onHourChange = function () {
     //Tint world
     if (INDOOR_MAPID.indexOf($gameMap._mapId) === -1) {
@@ -135,30 +170,29 @@ DayTimeSystem.prototype.onHourChange = function () {
     }
 };
 
-//=============================================================================
-var _timeSystem_GamePlayer_reserveTransfer = Game_Player.prototype.reserveTransfer;
-Game_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {
-    _timeSystem_GamePlayer_reserveTransfer.call(this, mapId, x, y, d, fadeType);
-    if (INDOOR_MAPID.indexOf(mapId) === -1) {
-        _dayTimeSystem.setTint();
-    } else {
-        $gameScreen.startTint([0, 0, 0, 0], 0);
-    }
-};
-
-//=============================================================================
+//-----------------------------------------------------------------------------
 // Scene map
+/**
+ * 添加时间窗口到左上角
+ * @type {*}
+ * @private
+ */
 var _Scene_Map_start = Scene_Map.prototype.start;
-Scene_Map.prototype.start = function() {
+Scene_Map.prototype.start = function () {
     _Scene_Map_start.call(this);
     this._day_Window = new Day_Window(0, 0);
     _dayTimeSystem._day_Window = this._day_Window;
     this.addWindow(this._day_Window);
 };
 
+/**
+ * 同步刷新时间窗口
+ * @type {*}
+ * @private
+ */
 // When scene map update, refresh my window
 var _Scene_Map_update = Scene_Map.prototype.update;
-Scene_Map.prototype.update = function() {
+Scene_Map.prototype.update = function () {
     _Scene_Map_update.call(this);
     this._day_Window.refresh();
 };
@@ -168,7 +202,7 @@ Scene_Map.prototype.update = function() {
  * @type {*}
  */
 var alias_Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
-Game_Screen.prototype.startFadeOut = function(duration) {
+Game_Screen.prototype.startFadeOut = function (duration) {
     alias_Game_Screen_startFadeOut.call(this, duration);
     _dayTimeSystem._day_Window.hide();
 };
@@ -178,11 +212,11 @@ Game_Screen.prototype.startFadeOut = function(duration) {
  * @type {*}
  */
 var alias_Game_Screen_startFadeIn = Game_Screen.prototype.startFadeIn;
-Game_Screen.prototype.startFadeIn = function(duration) {
+Game_Screen.prototype.startFadeIn = function (duration) {
     alias_Game_Screen_startFadeIn.call(this, duration);
     _dayTimeSystem._day_Window.show();
 };
-//=============================================================================
+//-----------------------------------------------------------------------------
 // Add my window to scene map when it start
 function Day_Window() {
     this.initialize.apply(this, arguments);
@@ -190,7 +224,12 @@ function Day_Window() {
 Day_Window.prototype = Object.create(Window_Base.prototype);
 Day_Window.prototype.constructor = Day_Window;
 
-Day_Window.prototype.initialize = function(x, y) {
+/**
+ * 窗口参数
+ * @param x
+ * @param y
+ */
+Day_Window.prototype.initialize = function (x, y) {
     Window_Base.prototype.initialize.call(this, x, y, 240, 80);
     //this.drawIcon(...);
     //this.drawText(...);
@@ -201,7 +240,10 @@ Day_Window.prototype.initialize = function(x, y) {
 };
 
 // My window update function
-Day_Window.prototype.refresh = function() {
+/**
+ * 刷新窗口信息
+ */
+Day_Window.prototype.refresh = function () {
     if (this._lastDay !== _dayTimeSystem.day || this._lastHour !== _dayTimeSystem.getHour()) {
         this._lastDay = _dayTimeSystem.getDay();
         this._lastHour = _dayTimeSystem.getHour();

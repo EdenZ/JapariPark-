@@ -5,6 +5,10 @@
  */
 
 //=============================================================================
+//Constant
+
+
+//=============================================================================
 // Plugin command
 var aliasPluginCommand = Game_Interpreter.prototype.pluginCommand;
 Game_Interpreter.prototype.pluginCommand = function(command, args) {
@@ -20,12 +24,16 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
 
 //=============================================================================
 // Farming System class
-var FriendFarmSystem = function () {
+/**
+ * System class
+ * @constructor
+ */
+function FriendFarmSystem () {
     this._cropStates = [];
     for (var n = 0; n <= 100; n++) {
         this._cropStates.push(0);
     }
-};
+}
 var _friendFarmSystem = new FriendFarmSystem();
 
 /**
@@ -53,13 +61,24 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
     }
 };
 
+/**
+ * 更改作物的贴图
+ * @param eventId
+ * @param tileId
+ */
 FriendFarmSystem.prototype.drawCropTile = function (eventId, tileId) {
     if ($gameMap._mapId === 1) {
         $gameMap._events[eventId]._tileId = tileId;
     }
 };
 
-
+//-----------------------------------------------------------------------------
+/**
+ * 地图初始化时：
+ * 1. 农田更新作物贴图
+ * @type {*}
+ * @private
+ */
 var _farm_system_gameMap_setup = Game_Map.prototype.setup;
 Game_Map.prototype.setup = function(mapId) {
     _farm_system_gameMap_setup.call(this, mapId);
@@ -76,6 +95,7 @@ Game_Map.prototype.setup = function(mapId) {
         }
     }
 };
+//-----------------------------------------------------------------------------
 
 /**
  * 收获
@@ -166,13 +186,13 @@ DayTimeSystem.prototype.onDayChange = function () {
  * @param {Object} type type of crop
  * @constructor
  */
-var CropState = function (type) {
+function CropState (type) {
     this.startDate = _dayTimeSystem.getDay();
     this.type = type;
     this.dayGroth = 1;
     this._daily = false;
     this.done = false;
-};
+}
 //=============================================================================
 /**
  * 作物种类信息
@@ -186,7 +206,7 @@ var CropState = function (type) {
  * @param {Number} finalTileId
  * @constructor
  */
-var CropType = function (name, seedPrice, amount, dayRequired, productPrice, seedId, productId, finalTileId) {
+function CropType (name, seedPrice, amount, dayRequired, productPrice, seedId, productId, finalTileId) {
     this.name = name;
     this.dayRequired = dayRequired;
     this.seedPrice = seedPrice;
@@ -195,7 +215,8 @@ var CropType = function (name, seedPrice, amount, dayRequired, productPrice, see
     this.seedId = seedId;
     this.productId = productId;
     this.finalTileId = finalTileId;
-};
+}
+
 _friendFarmSystem._cropGroup = {};
 _friendFarmSystem._cropGroup._carrot = new CropType('贾巴利萝卜', 5, 5, 2, 2, 2, 3, 109);
 _friendFarmSystem._cropGroup._potato = new CropType('贾巴利土豆', 30, 4, 5, 15, 4, 5, 110);
