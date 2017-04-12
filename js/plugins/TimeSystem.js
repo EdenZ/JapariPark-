@@ -99,7 +99,7 @@ var init_game_start = true;
 _dayTimeSystem._timer.start();
 
 //-----------------------------------------------------------------------------
-//GameMap
+//GameMap, Scene_Menu
 //-----------------------------------------------------------------------------
 /**
  * 1.start timer when begin
@@ -121,6 +121,19 @@ Game_Map.prototype.setup = function (mapId) {
         $gameScreen.startTint([0, 0, 0, 0], 0);
     }
 };
+
+var _time_system_SceneMenu_Start = Scene_Menu.prototype.start;
+Scene_Menu.prototype.start = function() {
+    _time_system_SceneMenu_Start.call(this);
+    _dayTimeSystem._timer._work = false;
+};
+
+var _time_system_SceneMenu_Stop = Scene_Menu.prototype.stop;
+Scene_Menu.prototype.stop = function() {
+    _time_system_SceneMenu_Stop.call(this);
+    _dayTimeSystem._timer._work = true;
+};
+
 
 //=============================================================================
 //Year
@@ -194,12 +207,18 @@ DayTimeSystem.prototype.processDate = function () {
     this.onDayChange();
 };
 
+/**
+ * Calculate week, month and year
+ */
 DayTimeSystem.prototype.calculateCalendar = function () {
     this.calculateWeek();
     this.calculateMonth();
     this.calculateYear();
 };
 
+/**
+ * pass day by sleep
+ */
 DayTimeSystem.prototype.passDayBySleep = function () {
     if (this.hour >= 6) {
         this.day++;
@@ -343,13 +362,22 @@ Day_Window.prototype.constructor = Day_Window;
  * @param y
  */
 Day_Window.prototype.initialize = function (x, y) {
-    Window_Base.prototype.initialize.call(this, x, y, 200, 120);
+    Window_Base.prototype.initialize.call(this, x, y, this.windowWidth(), this.windowHeight());
     //this.drawIcon(...);
     //this.drawText(...);
     //...
     this._lastMinute = -1;
     this._lastHour = -1;
     this.refresh();
+};
+
+Day_Window.prototype.windowWidth = function() {
+    //16
+    return 200;
+};
+
+Day_Window.prototype.windowHeight = function() {
+    return this.fittingHeight(2);
 };
 
 // My window update function
@@ -367,9 +395,9 @@ Day_Window.prototype.refresh = function () {
         var hour = (_dayTimeSystem.getHour() < 10 ? '0' : '') + String(_dayTimeSystem.getHour());
         var minute = (_dayTimeSystem.getMinute() < 10 ? '0' : '') + String(_dayTimeSystem.getMinute());
         var clock_text = hour + ':' + minute;
-        this.contents.drawText(calendar_text, 10, 0, 180, 40, 'left');
-        this.contents.drawText(weekName_text, 10, 40, 50, 40, 'left');
-        this.contents.drawText(clock_text, 80, 40, 120, 40, 'left');
+        this.contents.drawText(calendar_text, 10, 0, this.textWidth(calendar_text), this.fittingHeight(0), 'left');
+        this.contents.drawText(weekName_text, 10, this.fittingHeight(0), 50,this.fittingHeight(0) , 'left');
+        this.contents.drawText(clock_text, 80, this.fittingHeight(0), 120, this.fittingHeight(0), 'left');
     }
 };
 

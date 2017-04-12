@@ -1,7 +1,11 @@
 /*:
- * @param 成熟时间
- * @desc 种子成熟的时间（秒）
- * @default 60
+ * @plugindesc Farm System
+ * @author Eden
+ * @help
+ *
+ * @param debug
+ * @desc true of false
+ * @default false
  */
 
 //=============================================================================
