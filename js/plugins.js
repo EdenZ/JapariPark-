@@ -3,5 +3,6 @@
 var $plugins =
 [
 {"name":"TimeSystem","status":true,"description":"Time system","parameters":{"debug":"false"}},
-{"name":"FarmingSystem","status":true,"description":"","parameters":{"成熟时间":"60"}}
+{"name":"FriendStateSystem","status":true,"description":"Friend State Controller","parameters":{"debug":"false"}},
+{"name":"FarmingSystem","status":true,"description":"Farm System","parameters":{"debug":"false"}}
 ];
