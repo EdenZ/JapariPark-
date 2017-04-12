@@ -69,6 +69,7 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
             $gameParty.loseItem($dataItems[this._cropGroup._blackcurrant.seedId], 1);
             this.drawCropTile(eventId, 88);
     }
+    farmConsumeMp(1);
 };
 
 /**
@@ -117,6 +118,7 @@ Game_Map.prototype.setup = function(mapId) {
  * @param {Number} eventId
  */
 FriendFarmSystem.prototype.harvest = function (eventId) {
+    farmConsumeMp(1);
     var amount = this._cropStates[eventId].type.amountOfProduct;
     $gameParty.gainItem($dataItems[this._cropStates[eventId].type.productId], amount);
     $gameMessage.add('收获了' + String(amount) + '个' + this._cropStates[eventId].type.name);

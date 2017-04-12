@@ -28,9 +28,27 @@ SystemTimer.prototype.onTimeChange = function () {
 //======================================================================================================================
 // Sleeping: decrease HP and increase MP
 //======================================================================================================================
+var sleep_HP_cost = -45;
+var sleep_MP_gain = 50;
 var FSS_DTS_passDayBySleep = DayTimeSystem.prototype.passDayBySleep;
 DayTimeSystem.prototype.passDayBySleep = function () {
     FSS_DTS_passDayBySleep.call(this);
-    $gameActors.actor(mainActorID).gainHp(-45);
-    $gameActors.actor(mainActorID).gainMp(50);
+    $gameActors.actor(mainActorID).gainHp(sleep_HP_cost);
+    $gameActors.actor(mainActorID).gainMp(sleep_MP_gain);
 };
+
+var FSS_DTS_processDate = DayTimeSystem.prototype.processDate;
+DayTimeSystem.prototype.processDate = function () {
+    FSS_DTS_processDate.call(this);
+    $gameActors.actor(mainActorID).gainMp(sleep_HP_cost);
+    $gameActors.actor(mainActorID).gainMp(sleep_MP_gain * 0.5);
+};
+
+//======================================================================================================================
+// Action cost
+//======================================================================================================================
+var NORMAL_ACTION_COST = 1;
+
+function farmConsumeMp(cost) {
+    $gameActors.actor(mainActorID).gainMp(-cost);
+}

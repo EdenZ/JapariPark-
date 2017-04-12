@@ -203,7 +203,7 @@ DayTimeSystem.prototype.getDay = function () {
 DayTimeSystem.prototype.processDate = function () {
     this.day++;
     this.calculateCalendar();
-    this.hour = 0;
+    this.hour = 6;
     this.onDayChange();
 };
 
