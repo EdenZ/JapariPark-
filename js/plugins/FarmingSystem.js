@@ -8,32 +8,15 @@
  * @default false
  */
 
-//=============================================================================
-//Constant
-//=============================================================================
-
+//======================================================================================================================
+// 常数
+//======================================================================================================================
 //农场地图编号
 const FARM_MAP_ID = 1;
 
-
-//=============================================================================
-// Plugin command
-//=============================================================================
-var aliasPluginCommand = Game_Interpreter.prototype.pluginCommand;
-Game_Interpreter.prototype.pluginCommand = function(command, args) {
-    aliasPluginCommand.call(this, command, args);
-    if (command === 'farm_system') {
-        switch(args[0]) {
-            case 'seeding':
-                
-                break;
-        }
-    }
-};
-
-//=============================================================================
-// Farming System class
-//=============================================================================
+//======================================================================================================================
+// 种田主体
+//======================================================================================================================
 /**
  * System class
  * @constructor
@@ -47,23 +30,46 @@ function FriendFarmSystem () {
 var _friendFarmSystem = new FriendFarmSystem();
 
 /**
+ * Setup
+ * @param mapId
+ */
+FriendFarmSystem.prototype.setup = function (mapId) {
+    if (mapId === FARM_MAP_ID) {
+        for(var n = 0; n <this._cropStates.length ; n++) {
+            if (this._cropStates[n] === 0) {
+                continue;
+            }
+            if (this._cropStates[n].done) {
+                this.drawCropTile(n, this._cropStates[n].type.finalTileId);
+                continue;
+            }
+            this.drawCropTile(n, 88);
+        }
+    }
+}
+
+/**
  * 播种
  * @param {Number} eventId
  * @param {Number} type
  */
 FriendFarmSystem.prototype.seeding = function (eventId, type) {
     switch (type) {
+        //萝卜
         case this._cropGroup._carrot.name:
             this._cropStates[eventId] = new CropState(this._cropGroup._carrot);
             $gameParty.loseItem($dataItems[this._cropGroup._carrot.seedId], 1);
             this.drawCropTile(eventId, 88);
             break;
 
+        //土豆
         case this._cropGroup._potato.name:
             this._cropStates[eventId] = new CropState(this._cropGroup._potato);
             $gameParty.loseItem($dataItems[this._cropGroup._potato.seedId], 1);
             this.drawCropTile(eventId, 88);
             break;
+
+        //黑加仑
         case this._cropGroup._blackcurrant.name:
             this._cropStates[eventId] = new CropState(this._cropGroup._blackcurrant);
             $gameParty.loseItem($dataItems[this._cropGroup._blackcurrant.seedId], 1);
@@ -73,45 +79,14 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
 };
 
 /**
- * 更改作物的贴图
+ * 浇水
  * @param eventId
- * @param tileId
  */
-FriendFarmSystem.prototype.drawCropTile = function (eventId, tileId) {
-    if ($gameMap._mapId === 1) {
-        $gameMap._events[eventId]._tileId = tileId;
-    }
+FriendFarmSystem.prototype.watering = function (eventId) {
+    $gamePlayer.requestBalloon(4);
+    this._cropStates[eventId].daily = true;
+    this.drawCropTile(eventId, 88);
 };
-
-//-----------------------------------------------------------------------------
-//Game map setup
-//-----------------------------------------------------------------------------
-
-/**
- * 地图初始化时：
- * 1. 农田更新作物贴图
- * @type {*}
- * @private
- */
-var _farm_system_gameMap_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function(mapId) {
-    _farm_system_gameMap_setup.call(this, mapId);
-    if (mapId === 1) {
-        for(var n = 0; n <_friendFarmSystem._cropStates.length ; n++) {
-            if (_friendFarmSystem._cropStates[n] === 0) {
-                continue;
-            }
-            if (_friendFarmSystem._cropStates[n].done) {
-                _friendFarmSystem.drawCropTile(n, _friendFarmSystem._cropStates[n].type.finalTileId);
-                continue;
-            }
-            _friendFarmSystem.drawCropTile(n, 88);
-        }
-    }
-};
-//=============================================================================
-//农田相关
-//=============================================================================
 
 /**
  * 收获
@@ -127,17 +102,48 @@ FriendFarmSystem.prototype.harvest = function (eventId) {
 };
 
 /**
+ * 作物死亡
+ * @param eventId
+ */
+FriendFarmSystem.prototype.cropDeath = function (eventId) {
+    this._cropStates[eventId] = 0;
+    this.drawCropTile(eventId, 0);
+};
+
+/**
+ * 更改作物的贴图
+ * @param eventId
+ * @param tileId
+ */
+FriendFarmSystem.prototype.drawCropTile = function (eventId, tileId) {
+    if ($gameMap._mapId === 1) {
+        $gameMap._events[eventId]._tileId = tileId;
+        if (!this._cropStates[eventId].daily) {
+            this.currentSceneMap._spriteset._characterSprites[eventId - 1].setColorTone([152, 151, 158, 0]);
+        } else {
+            this.currentSceneMap._spriteset._characterSprites[eventId - 1].setColorTone([0, 0, 0, 0]);
+        }
+    }
+};
+
+/**
  * Event把柄
  * @param {Number} eventId
  */
 FriendFarmSystem.prototype.onEventCall = function (eventId) {
+    //空田,选种子
     if (this._cropStates[eventId] === 0) {
         this.chooseSeed(eventId);
         return;
     }
+    //成熟,收获
     if (this._cropStates[eventId].done) {
         this.harvest(eventId);
-
+        return;
+    }
+    //缺水,浇水
+    if (!this._cropStates[eventId].daily) {
+        this.watering(eventId);
         return;
     }
     $gameMessage.add(this._cropStates[eventId].type.name + ', ' + this._cropStates[eventId].dayGroth + '天');
@@ -149,6 +155,7 @@ FriendFarmSystem.prototype.onEventCall = function (eventId) {
  */
 FriendFarmSystem.prototype.chooseSeed = function (eventId) {
     var choices = [];
+    //检查玩家是否有种子,将拥有的种子加入选项单
     for (var cropKey in this._cropGroup) {
         if (!this._cropGroup.hasOwnProperty(cropKey)) continue;
 
@@ -179,27 +186,40 @@ FriendFarmSystem.prototype.isDone = function (eventId) {
     return _friendFarmSystem._cropStates[eventId].done;
 };
 
-var _farm_system_onDayChange = DayTimeSystem.prototype.onDayChange;
 /**
- * 日期变更
+ * 日期变更操作
  */
-DayTimeSystem.prototype.onDayChange = function () {
-    _farm_system_onDayChange.call(this);
-    for(var n = 0; n <_friendFarmSystem._cropStates.length ; n++) {
-        if (_friendFarmSystem._cropStates[n] === 0) {
+FriendFarmSystem.prototype.dayChangeProcess = function () {
+    for(var n = 0; n <this._cropStates.length ; n++) {
+        if (this._cropStates[n] === 0) {
             continue;
         }
-        _friendFarmSystem._cropStates[n].dayGroth = this.getDay() - _friendFarmSystem._cropStates[n].startDate + 1;
-        _friendFarmSystem._cropStates[n]._daily = false;
-        if (_friendFarmSystem._cropStates[n].dayGroth >= _friendFarmSystem._cropStates[n].type.dayRequired) {
-            _friendFarmSystem._cropStates[n].done = true;
-            _friendFarmSystem.drawCropTile(n, _friendFarmSystem._cropStates[n].type.finalTileId);
+        //没有浇水,作物死亡
+        if (!this._cropStates[n].daily) {
+            this.cropDeath(n);
+        }
+        //更新成长天数
+        this._cropStates[n].dayGroth = this.getDay() - this._cropStates[n].startDate + 1;
+        //浇水状态重置
+        this._cropStates[n].daily = false;
+        //成熟后
+        if (this._cropStates[n].dayGroth >= this._cropStates[n].type.dayRequired) {
+            this._cropStates[n].done = true;
+            this.drawCropTile(n, this._cropStates[n].type.finalTileId);
         }
     }
 };
 
+//======================================================================================================================
+// 实时作物状态
+//======================================================================================================================
 /**
  * Represent crop state
+ * startdate    开始日期
+ * type         种类
+ * dayGroth     成长天数
+ * daily        每日浇水
+ * done         成熟
  * @param {Object} type type of crop
  * @constructor
  */
@@ -207,13 +227,12 @@ function CropState (type) {
     this.startDate = _dayTimeSystem.getDay();
     this.type = type;
     this.dayGroth = 1;
-    this._daily = false;
+    this.daily = false;
     this.done = false;
 }
-//=============================================================================
-//作物信息
-//=============================================================================
-
+//======================================================================================================================
+// 作物信息
+//======================================================================================================================
 /**
  * 作物种类信息
  * @param {String} name
@@ -241,3 +260,36 @@ _friendFarmSystem._cropGroup = {};
 _friendFarmSystem._cropGroup._carrot = new CropType('贾巴利萝卜', 5, 5, 2, 2, 2, 3, 109);
 _friendFarmSystem._cropGroup._potato = new CropType('贾巴利土豆', 30, 4, 5, 15, 4, 5, 110);
 _friendFarmSystem._cropGroup._blackcurrant = new CropType('贾巴利黑加仑', 120, 10, 10, 25, 6, 7, 111);
+
+//======================================================================================================================
+// 其他插件修改
+//======================================================================================================================
+var _farm_system_onDayChange = DayTimeSystem.prototype.onDayChange;
+/**
+ * 日期变更
+ */
+DayTimeSystem.prototype.onDayChange = function () {
+    _farm_system_onDayChange.call(this);
+    _friendFarmSystem.dayChangeProcess();
+};
+
+//======================================================================================================================
+// CORE修改
+//======================================================================================================================
+/**
+ * 地图初始化时：
+ * 1. 农田更新作物贴图
+ * @type {*}
+ * @private
+ */
+var _farm_system_gameMap_setup = Game_Map.prototype.setup;
+Game_Map.prototype.setup = function(mapId) {
+    _farm_system_gameMap_setup.call(this, mapId);
+    _friendFarmSystem.setup(mapId);
+};
+
+var FS_SM_create = Scene_Map.prototype.create;
+Scene_Map.prototype.create = function () {
+    FS_SM_create.call(this);
+    _friendFarmSystem.currentSceneMap = this;
+};
