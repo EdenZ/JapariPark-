@@ -78,11 +78,11 @@ function SystemTimer() {
  */
 SystemTimer.prototype.start = function () {
     //计时器在用 and 无对话窗口 and 无菜单
-    if (_dayTimeSystem._timer._work && !$gameMessage.isBusy() && !_dayTimeSystem._timer._menu) {
-        _dayTimeSystem._timer._count++;
-        _dayTimeSystem._timer.onTimeChange();
+    if (this._work && !$gameMessage.isBusy() && !this._menu) {
+        this._count++;
+        this.onTimeChange();
     }
-    setTimeout(_dayTimeSystem._timer.start, 100);
+    setTimeout(this.start.bind(this), 100);
 };
 
 /**

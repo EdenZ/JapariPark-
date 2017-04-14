@@ -34,19 +34,24 @@ var _friendFarmSystem = new FriendFarmSystem();
  * @param mapId
  */
 FriendFarmSystem.prototype.setup = function (mapId) {
-    if (mapId === FARM_MAP_ID) {
-        for(var n = 0; n <this._cropStates.length ; n++) {
-            if (this._cropStates[n] === 0) {
-                continue;
+    //TODO  这里有毒
+    try {
+        if (mapId === FARM_MAP_ID) {
+            for (var n = 0; n < this._cropStates.length; n++) {
+                if (this._cropStates[n] === 0) {
+                    continue;
+                }
+                if (this._cropStates[n].done) {
+                    this.drawCropTile(n, this._cropStates[n].type.finalTileId);
+                    continue;
+                }
+                this.drawCropTile(n, 88);
             }
-            if (this._cropStates[n].done) {
-                this.drawCropTile(n, this._cropStates[n].type.finalTileId);
-                continue;
-            }
-            this.drawCropTile(n, 88);
         }
+    } catch (e) {
+        console.log(e);
     }
-}
+};
 
 /**
  * 播种
@@ -83,7 +88,7 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
  * @param eventId
  */
 FriendFarmSystem.prototype.watering = function (eventId) {
-    $gamePlayer.requestBalloon(4);
+    $gamePlayer.requestBalloon(6);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
 };
@@ -118,12 +123,25 @@ FriendFarmSystem.prototype.cropDeath = function (eventId) {
 FriendFarmSystem.prototype.drawCropTile = function (eventId, tileId) {
     if ($gameMap._mapId === 1) {
         $gameMap._events[eventId]._tileId = tileId;
+        var colorTone = [0, 0, 0, 0];
         if (!this._cropStates[eventId].daily) {
-            this.currentSceneMap._spriteset._characterSprites[eventId - 1].setColorTone([152, 151, 158, 0]);
-        } else {
-            this.currentSceneMap._spriteset._characterSprites[eventId - 1].setColorTone([0, 0, 0, 0]);
+            colorTone = [0, 0, 0, 200];
         }
+        this.drawCropColor(eventId, colorTone);
     }
+};
+
+/**
+ * 给作物上色
+ * @param eventId
+ * @param colorTone
+ */
+FriendFarmSystem.prototype.drawCropColor = function (eventId, colorTone) {
+    if (!this.currentSceneMap._spriteset) {
+        setTimeout(this.drawCropColor.bind(this, eventId, colorTone), 10);
+        return;
+    }
+    this.currentSceneMap._spriteset._characterSprites[eventId - 1].setColorTone(colorTone);
 };
 
 /**
@@ -189,24 +207,29 @@ FriendFarmSystem.prototype.isDone = function (eventId) {
 /**
  * 日期变更操作
  */
-FriendFarmSystem.prototype.dayChangeProcess = function () {
+FriendFarmSystem.prototype.dayChangeProcess = function (day) {
     for(var n = 0; n <this._cropStates.length ; n++) {
         if (this._cropStates[n] === 0) {
+            continue;
+        }
+        if (this._cropStates[n].done) {
             continue;
         }
         //没有浇水,作物死亡
         if (!this._cropStates[n].daily) {
             this.cropDeath(n);
+            continue;
         }
         //更新成长天数
-        this._cropStates[n].dayGroth = this.getDay() - this._cropStates[n].startDate + 1;
-        //浇水状态重置
-        this._cropStates[n].daily = false;
+        this._cropStates[n].dayGroth = day - this._cropStates[n].startDate + 1;
         //成熟后
         if (this._cropStates[n].dayGroth >= this._cropStates[n].type.dayRequired) {
             this._cropStates[n].done = true;
             this.drawCropTile(n, this._cropStates[n].type.finalTileId);
+            continue;
         }
+        //浇水状态重置
+        this._cropStates[n].daily = false;
     }
 };
 
@@ -270,7 +293,7 @@ var _farm_system_onDayChange = DayTimeSystem.prototype.onDayChange;
  */
 DayTimeSystem.prototype.onDayChange = function () {
     _farm_system_onDayChange.call(this);
-    _friendFarmSystem.dayChangeProcess();
+    _friendFarmSystem.dayChangeProcess(this.getDay());
 };
 
 //======================================================================================================================
