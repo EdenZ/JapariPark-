@@ -8,10 +8,9 @@
  * @default false
  */
 
-//=============================================================================
-//Constant
-//=============================================================================
-
+//======================================================================================================================
+// 常数
+//======================================================================================================================
 //色调信息
 var GAME_TIME_TINTS = [
     [30, 0, 40, 165], 	// => 0 hour
@@ -45,10 +44,13 @@ var INDOOR_MAPID = [3, 4, 6];
 var WEEKDAY_NAME = ['星期天', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 var MONTH_NAME = ['十二月', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月'];
 
-//=============================================================================
-//Core basic
-//=============================================================================
+//======================================================================================================================
+// 插件核心
+//======================================================================================================================
+//插件参数读取
 var dayTimeSystemParams = PluginManager.parameters('TimeSystem');
+//是否第一次启动游戏
+var init_game_start = true;
 
 function DayTimeSystem () {
     this.day = 1;
@@ -57,27 +59,26 @@ function DayTimeSystem () {
     this.week = 1;
     this.month = 1;
     this.year = 1;
+    this._timer = new SystemTimer();
 }
 var _dayTimeSystem = new DayTimeSystem();
 
-//=============================================================================
-//Timer
-//=============================================================================
 /**
  * 内部计时器
  * @constructor
  */
 function SystemTimer() {
     this._work = false;
+    this._menu = false;
     this._count = 0;
 }
 
 /**
- * 计时
+ * 开始计时
  */
 SystemTimer.prototype.start = function () {
-    //计时器在用 and 无对话窗口
-    if (_dayTimeSystem._timer._work && !$gameMessage.isBusy()) {
+    //计时器在用 and 无对话窗口 and 无菜单
+    if (_dayTimeSystem._timer._work && !$gameMessage.isBusy() && !_dayTimeSystem._timer._menu) {
         _dayTimeSystem._timer._count++;
         _dayTimeSystem._timer.onTimeChange();
     }
@@ -94,51 +95,7 @@ SystemTimer.prototype.onTimeChange = function () {
     }
 };
 
-_dayTimeSystem._timer = new SystemTimer();
-var init_game_start = true;
-_dayTimeSystem._timer.start();
-
-//-----------------------------------------------------------------------------
-//GameMap, Scene_Menu
-//-----------------------------------------------------------------------------
-/**
- * 1.start timer when begin
- * 2.set tint at the beginning of map setup
- * @type {*}
- * @private
- */
-var _time_system_gameMap_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function (mapId) {
-    _time_system_gameMap_setup.call(this, mapId);
-    //游戏开始时，计时
-    if (init_game_start) {
-        _dayTimeSystem._timer._work = true;
-        init_game_start = false;
-    }
-    if (INDOOR_MAPID.indexOf(mapId) === -1) {
-        _dayTimeSystem.setTint();
-    } else {
-        $gameScreen.startTint([0, 0, 0, 0], 0);
-    }
-};
-
-var _time_system_SceneMenu_Start = Scene_Menu.prototype.start;
-Scene_Menu.prototype.start = function() {
-    _time_system_SceneMenu_Start.call(this);
-    _dayTimeSystem._timer._work = false;
-};
-
-var _time_system_SceneMenu_Stop = Scene_Menu.prototype.stop;
-Scene_Menu.prototype.stop = function() {
-    _time_system_SceneMenu_Stop.call(this);
-    _dayTimeSystem._timer._work = true;
-};
-
-
-//=============================================================================
-//Year
-//=============================================================================
-
+//年方法
 DayTimeSystem.prototype.getYear = function () {
     return this.year;
 };
@@ -152,10 +109,7 @@ DayTimeSystem.prototype.onYearChange = function () {
     //Event
 };
 
-//=============================================================================
-//Month
-//=============================================================================
-
+//月方法
 DayTimeSystem.prototype.getMonth = function () {
     return this.month;
 };
@@ -169,10 +123,7 @@ DayTimeSystem.prototype.onMonthChange = function () {
     //Event
 };
 
-//=============================================================================
-//Week
-//=============================================================================
-
+//周方法
 DayTimeSystem.prototype.getWeek = function () {
     return this.week;
 };
@@ -186,9 +137,6 @@ DayTimeSystem.prototype.onWeekChange = function () {
     //Event
 };
 
-//=============================================================================
-//Day
-//=============================================================================
 /**
  * 获取当前日期
  * @returns {number}
@@ -235,9 +183,7 @@ DayTimeSystem.prototype.passDayBySleep = function () {
 DayTimeSystem.prototype.onDayChange = function () {
     // Event
 };
-//=============================================================================
-//Hour
-//=============================================================================
+
 /**
  * 获取小时
  * @returns {number}
@@ -277,9 +223,6 @@ DayTimeSystem.prototype.onHourChange = function () {
     }
 };
 
-//=============================================================================
-//Minute
-//=============================================================================
 DayTimeSystem.prototype.getMinute = function () {
     return this.minute;
 };
@@ -296,60 +239,9 @@ DayTimeSystem.prototype.onMinuteChange = function () {
     //Event
 };
 
-//-----------------------------------------------------------------------------
-// Scene map
-//-----------------------------------------------------------------------------
-/**
- * 添加时间窗口到左上角
- * @type {*}
- * @private
- */
-var _Scene_Map_start = Scene_Map.prototype.start;
-Scene_Map.prototype.start = function () {
-    _Scene_Map_start.call(this);
-    this._day_Window = new Day_Window(0, 0);
-    _dayTimeSystem._day_Window = this._day_Window;
-    this.addWindow(this._day_Window);
-};
-
-/**
- * 同步刷新时间窗口
- * @type {*}
- * @private
- */
-// When scene map update, refresh my window
-var _Scene_Map_update = Scene_Map.prototype.update;
-Scene_Map.prototype.update = function () {
-    _Scene_Map_update.call(this);
-    this._day_Window.refresh();
-};
-
-/**
- * Hide day window when fade out
- * 停止计时
- * @type {*}
- */
-var alias_Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
-Game_Screen.prototype.startFadeOut = function (duration) {
-    alias_Game_Screen_startFadeOut.call(this, duration);
-    _dayTimeSystem._day_Window.hide();
-    _dayTimeSystem._timer._work = false;
-};
-
-/**
- * Show day window when fade out
- * 开始计时
- * @type {*}
- */
-var alias_Game_Screen_startFadeIn = Game_Screen.prototype.startFadeIn;
-Game_Screen.prototype.startFadeIn = function (duration) {
-    alias_Game_Screen_startFadeIn.call(this, duration);
-    _dayTimeSystem._day_Window.show();
-    _dayTimeSystem._timer._work = true;
-};
-//=============================================================================
-//时间窗口
-//=============================================================================
+//======================================================================================================================
+// 时间窗口
+//======================================================================================================================
 function Day_Window() {
     this.initialize.apply(this, arguments);
 }
@@ -401,12 +293,89 @@ Day_Window.prototype.refresh = function () {
     }
 };
 
+//======================================================================================================================
+// CORE修改
+//======================================================================================================================
 /**
- * Template
+ * 添加时间窗口到左上角
  * @type {*}
  * @private
  */
-var _day_window_onDayChange = DayTimeSystem.prototype.onDayChange;
-DayTimeSystem.prototype.onDayChange = function () {
-    _day_window_onDayChange.call(this);
+var _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function () {
+    _Scene_Map_start.call(this);
+    //新建时间窗口并加入scene map中
+    this._day_Window = new Day_Window(0, 0);
+    _dayTimeSystem._day_Window = this._day_Window;
+    this.addWindow(this._day_Window);
+};
+
+/**
+ * 同步刷新时间窗口
+ * @type {*}
+ * @private
+ */
+// When scene map update, refresh my window
+var _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function () {
+    _Scene_Map_update.call(this);
+    this._day_Window.refresh();
+};
+
+/**
+ * Hide day window when fade out
+ * 停止计时
+ * @type {*}
+ */
+var alias_Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
+Game_Screen.prototype.startFadeOut = function (duration) {
+    alias_Game_Screen_startFadeOut.call(this, duration);
+    _dayTimeSystem._day_Window.hide();
+    _dayTimeSystem._timer._work = false;
+};
+
+/**
+ * Show day window when fade out
+ * 开始计时
+ * @type {*}
+ */
+var alias_Game_Screen_startFadeIn = Game_Screen.prototype.startFadeIn;
+Game_Screen.prototype.startFadeIn = function (duration) {
+    alias_Game_Screen_startFadeIn.call(this, duration);
+    _dayTimeSystem._day_Window.show();
+    _dayTimeSystem._timer._work = true;
+};
+
+/**
+ * 1.start timer when begin
+ * 2.set tint at the beginning of map setup
+ * @type {*}
+ * @private
+ */
+var _time_system_gameMap_setup = Game_Map.prototype.setup;
+Game_Map.prototype.setup = function (mapId) {
+    _time_system_gameMap_setup.call(this, mapId);
+    //游戏开始时，计时
+    if (init_game_start) {
+        _dayTimeSystem._timer.start();
+        _dayTimeSystem._timer._work = true;
+        init_game_start = false;
+    }
+    if (INDOOR_MAPID.indexOf(mapId) === -1) {
+        _dayTimeSystem.setTint();
+    } else {
+        $gameScreen.startTint([0, 0, 0, 0], 0);
+    }
+};
+
+var _time_system_SceneMenu_Start = Scene_Menu.prototype.start;
+Scene_Menu.prototype.start = function() {
+    _time_system_SceneMenu_Start.call(this);
+    _dayTimeSystem._timer._menu = true;
+};
+
+var _time_system_SceneMenu_Stop = Scene_Menu.prototype.stop;
+Scene_Menu.prototype.stop = function() {
+    _time_system_SceneMenu_Stop.call(this);
+    _dayTimeSystem._timer._menu = false;
 };
