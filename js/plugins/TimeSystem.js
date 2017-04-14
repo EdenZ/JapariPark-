@@ -152,6 +152,8 @@ DayTimeSystem.prototype.processDate = function () {
     this.day++;
     this.calculateCalendar();
     this.hour = 6;
+    this.minute = 0;
+    this._timer._count = 0;
     this.onDayChange();
 };
 
@@ -174,6 +176,7 @@ DayTimeSystem.prototype.passDayBySleep = function () {
         this.onDayChange();
     }
     this.hour = 6;
+    this.minute = 0;
     this._timer._count = 0;
 };
 

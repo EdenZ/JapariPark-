@@ -83,7 +83,7 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
     $gameParty.loseItem($dataItems[cropType.seedId], 1);
     this.drawCropTile(eventId, 88);
     this.startActionWait(1);
-    farmConsumeMp(12);
+    farmConsumeMp(8);
 };
 
 /**
@@ -92,7 +92,7 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
  */
 FriendFarmSystem.prototype.watering = function (eventId) {
     $gamePlayer.requestBalloon(6);
-    farmConsumeMp(3);
+    farmConsumeMp(2);
     this.startActionWait(3);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
@@ -169,7 +169,7 @@ FriendFarmSystem.prototype.onEventCall = function (eventId) {
         this.watering(eventId);
         return;
     }
-    $gameMessage.add(this._cropStates[eventId].type.name + ', ' + this._cropStates[eventId].dayGroth + '天');
+    $gameMessage.add(this._cropStates[eventId].type.name + ', 已成长' + this._cropStates[eventId].dayGroth + '天');
 };
 
 /**
@@ -237,7 +237,7 @@ FriendFarmSystem.prototype.dayChangeProcess = function (day) {
             continue;
         }
         //更新成长天数
-        this._cropStates[n].dayGroth = day - this._cropStates[n].startDate + 1;
+        this._cropStates[n].dayGroth = day - this._cropStates[n].startDate;
         //成熟后
         if (this._cropStates[n].dayGroth >= this._cropStates[n].type.dayRequired) {
             this._cropStates[n].done = true;
@@ -265,7 +265,7 @@ FriendFarmSystem.prototype.dayChangeProcess = function (day) {
 function CropState (type) {
     this.startDate = _dayTimeSystem.getDay();
     this.type = type;
-    this.dayGroth = 1;
+    this.dayGroth = 0;
     this.daily = false;
     this.done = false;
 }
