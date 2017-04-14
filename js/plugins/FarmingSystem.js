@@ -22,6 +22,7 @@ const FARM_MAP_ID = 1;
  * @constructor
  */
 function FriendFarmSystem () {
+    this._wait = 0;
     this._cropStates = [];
     for (var n = 0; n <= 100; n++) {
         this._cropStates.push(0);
@@ -34,7 +35,6 @@ var _friendFarmSystem = new FriendFarmSystem();
  * @param mapId
  */
 FriendFarmSystem.prototype.setup = function (mapId) {
-    //TODO  这里有毒
     try {
         if (mapId === FARM_MAP_ID) {
             for (var n = 0; n < this._cropStates.length; n++) {
@@ -59,28 +59,31 @@ FriendFarmSystem.prototype.setup = function (mapId) {
  * @param {Number} type
  */
 FriendFarmSystem.prototype.seeding = function (eventId, type) {
+    var cropType;
     switch (type) {
         //萝卜
         case this._cropGroup._carrot.name:
-            this._cropStates[eventId] = new CropState(this._cropGroup._carrot);
-            $gameParty.loseItem($dataItems[this._cropGroup._carrot.seedId], 1);
-            this.drawCropTile(eventId, 88);
+            cropType = this._cropGroup._carrot;
             break;
 
         //土豆
         case this._cropGroup._potato.name:
-            this._cropStates[eventId] = new CropState(this._cropGroup._potato);
-            $gameParty.loseItem($dataItems[this._cropGroup._potato.seedId], 1);
-            this.drawCropTile(eventId, 88);
+            cropType = this._cropGroup._potato;
             break;
 
         //黑加仑
         case this._cropGroup._blackcurrant.name:
-            this._cropStates[eventId] = new CropState(this._cropGroup._blackcurrant);
-            $gameParty.loseItem($dataItems[this._cropGroup._blackcurrant.seedId], 1);
-            this.drawCropTile(eventId, 88);
+            cropType = this._cropGroup._blackcurrant;
+            break;
+
+        case '取消':
+            return;
     }
-    farmConsumeMp(1);
+    this._cropStates[eventId] = new CropState(cropType);
+    $gameParty.loseItem($dataItems[cropType.seedId], 1);
+    this.drawCropTile(eventId, 88);
+    this.startActionWait(1);
+    farmConsumeMp(12);
 };
 
 /**
@@ -89,6 +92,8 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
  */
 FriendFarmSystem.prototype.watering = function (eventId) {
     $gamePlayer.requestBalloon(6);
+    farmConsumeMp(3);
+    this.startActionWait(3);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
 };
@@ -98,7 +103,7 @@ FriendFarmSystem.prototype.watering = function (eventId) {
  * @param {Number} eventId
  */
 FriendFarmSystem.prototype.harvest = function (eventId) {
-    farmConsumeMp(1);
+    this.startActionWait(1);
     var amount = this._cropStates[eventId].type.amountOfProduct;
     $gameParty.gainItem($dataItems[this._cropStates[eventId].type.productId], amount);
     $gameMessage.add('收获了' + String(amount) + '个' + this._cropStates[eventId].type.name);
@@ -204,6 +209,17 @@ FriendFarmSystem.prototype.isDone = function (eventId) {
     return _friendFarmSystem._cropStates[eventId].done;
 };
 
+FriendFarmSystem.prototype.startActionWait = function (duration) {
+    this._wait = duration;
+};
+
+FriendFarmSystem.prototype.updateActionWait = function () {
+    if (this._wait > 0) {
+        this._wait--;
+        console.log(this._wait);
+    }
+};
+
 /**
  * 日期变更操作
  */
@@ -296,6 +312,12 @@ DayTimeSystem.prototype.onDayChange = function () {
     _friendFarmSystem.dayChangeProcess(this.getDay());
 };
 
+var _FS_DTS_onMinuteChange = DayTimeSystem.prototype.onMinuteChange;
+DayTimeSystem.prototype.onMinuteChange = function () {
+    _FS_DTS_onMinuteChange.call(this);
+    _friendFarmSystem.updateActionWait();
+};
+
 //======================================================================================================================
 // CORE修改
 //======================================================================================================================
@@ -315,4 +337,12 @@ var FS_SM_create = Scene_Map.prototype.create;
 Scene_Map.prototype.create = function () {
     FS_SM_create.call(this);
     _friendFarmSystem.currentSceneMap = this;
+};
+
+var _FS_GP_executeMove = Game_Player.prototype.executeMove;
+Game_Player.prototype.executeMove = function (direction) {
+    if (_friendFarmSystem._wait > 0) {
+        return;
+    }
+    _FS_GP_executeMove.call(this, direction);
 };
