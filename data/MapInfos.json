@@ -1,7 +1,7 @@
 [
 {"id":0,"expanded":true,"name":"Forest Town","order":4,"parentId":0,"scrollX":819,"scrollY":461.5},
 {"id":1,"expanded":true,"name":"House 2","order":2,"parentId":1,"scrollX":811,"scrollY":678.5},
-{"id":2,"expanded":false,"name":"Item Shop","order":5,"parentId":2,"scrollX":811,"scrollY":453.5},
+{"id":2,"expanded":false,"name":"Item Shop","order":5,"parentId":2,"scrollX":811,"scrollY":1305.5},
 {"id":3,"expanded":false,"name":"Seacoast","order":6,"parentId":0,"scrollX":819,"scrollY":461.5},
 {"id":4,"expanded":false,"name":"Stone Cave","order":3,"parentId":1,"scrollX":819,"scrollY":461.5}
 ]
