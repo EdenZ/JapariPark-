@@ -218,6 +218,7 @@ FriendFarmSystem.prototype.chooseSeed = function (eventId) {
 /**
  * 消耗MP
  * @param amount
+ * @return true or false
  */
 FriendFarmSystem.prototype.checkAndConsumeMP = function (amount) {
     if ($gameActors.actor(mainActorID)._mp < amount) return false;
@@ -362,13 +363,15 @@ DayTimeSystem.prototype.onMinuteChange = function () {
 var _farm_system_gameMap_setup = Game_Map.prototype.setup;
 Game_Map.prototype.setup = function(mapId) {
     _farm_system_gameMap_setup.call(this, mapId);
-    _friendFarmSystem.setup(mapId);
+    _friendFarmSystem.setup($gameMap._mapId);
 };
 
 var FS_SM_create = Scene_Map.prototype.create;
 Scene_Map.prototype.create = function () {
     FS_SM_create.call(this);
     _friendFarmSystem.currentSceneMap = this;
+    console.log($gameMap._mapId);
+    _friendFarmSystem.setup($gameMap._mapId);
 };
 
 var _FS_GP_canMove = Game_Player.prototype.canMove;
