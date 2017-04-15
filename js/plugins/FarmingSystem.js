@@ -79,11 +79,14 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
         case '取消':
             return;
     }
+    if (!this.checkAndConsumeMP(8))  {
+        $gamePlayer.requestBalloon(7);
+        return;
+    }
     this._cropStates[eventId] = new CropState(cropType);
     $gameParty.loseItem($dataItems[cropType.seedId], 1);
     this.drawCropTile(eventId, 88);
     this.startActionWait(1);
-    farmConsumeMp(8);
 };
 
 /**
@@ -91,8 +94,11 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
  * @param eventId
  */
 FriendFarmSystem.prototype.watering = function (eventId) {
+    if (!this.checkAndConsumeMP(2)) {
+        $gamePlayer.requestBalloon(7);
+        return;
+    }
     $gamePlayer.requestBalloon(6);
-    farmConsumeMp(2);
     this.startActionWait(3);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
@@ -146,7 +152,16 @@ FriendFarmSystem.prototype.drawCropColor = function (eventId, colorTone) {
         setTimeout(this.drawCropColor.bind(this, eventId, colorTone), 10);
         return;
     }
-    this.currentSceneMap._spriteset._characterSprites[eventId - 1].setColorTone(colorTone);
+    var spriteSet = this.currentSceneMap._spriteset._characterSprites;
+    var length = spriteSet.length;
+    //匹配事件ID上色
+    for (var n = 0; n <length; n++) {
+        if (spriteSet[n]._character instanceof Game_Event && spriteSet[n]._character._eventId === eventId) {
+            //找到对象完成作业并结束任务
+            spriteSet[n].setColorTone(colorTone);
+            return;
+        }
+    }
 };
 
 /**
@@ -201,6 +216,16 @@ FriendFarmSystem.prototype.chooseSeed = function (eventId) {
 };
 
 /**
+ * 消耗MP
+ * @param amount
+ */
+FriendFarmSystem.prototype.checkAndConsumeMP = function (amount) {
+    if ($gameActors.actor(mainActorID)._mp < amount) return false;
+    farmConsumeMp(amount);
+    return true;
+};
+
+/**
  * 此地的作物是否成熟
  * @param {Number} eventId
  * @returns {boolean}
@@ -209,14 +234,20 @@ FriendFarmSystem.prototype.isDone = function (eventId) {
     return _friendFarmSystem._cropStates[eventId].done;
 };
 
+/**
+ * 等待动作结束
+ * @param duration
+ */
 FriendFarmSystem.prototype.startActionWait = function (duration) {
     this._wait = duration;
 };
 
+/**
+ * 更新等待时间
+ */
 FriendFarmSystem.prototype.updateActionWait = function () {
     if (this._wait > 0) {
         this._wait--;
-        console.log(this._wait);
     }
 };
 
@@ -340,10 +371,10 @@ Scene_Map.prototype.create = function () {
     _friendFarmSystem.currentSceneMap = this;
 };
 
-var _FS_GP_executeMove = Game_Player.prototype.executeMove;
-Game_Player.prototype.executeMove = function (direction) {
+var _FS_GP_canMove = Game_Player.prototype.canMove;
+Game_Player.prototype.canMove = function () {
     if (_friendFarmSystem._wait > 0) {
-        return;
+        return false;
     }
-    _FS_GP_executeMove.call(this, direction);
+    return _FS_GP_canMove.call(this);
 };
