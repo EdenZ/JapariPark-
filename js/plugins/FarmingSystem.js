@@ -98,7 +98,6 @@ FriendFarmSystem.prototype.watering = function (eventId) {
         $gamePlayer.requestBalloon(7);
         return;
     }
-    $gamePlayer.requestBalloon(6);
     $gamePlayer.setProcessBar(3);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
@@ -417,14 +416,16 @@ DayTimeSystem.prototype.onMinuteChange = function () {
 };
 
 //======================================================================================================================
+//
 // CORE修改
+//
 //======================================================================================================================
-var FS_SM_create = Scene_Map.prototype.create;
-Scene_Map.prototype.create = function () {
-    FS_SM_create.call(this);
+var _FS_SM_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function () {
+    _FS_SM_start.call(this);
     _friendFarmSystem.currentSceneMap = this;
-    var mapId = this._transfer ? $gamePlayer.newMapId() : $gameMap.mapId();
-    _friendFarmSystem.setup(mapId);
+    _friendFarmSystem.setup($gameMap._mapId);
+    console.log($gameMap._mapId);
 };
 
 var _FS_GP_canMove = Game_Player.prototype.canMove;
@@ -437,7 +438,9 @@ Game_Player.prototype.canMove = function () {
 
 //读条图像
 
-//Game_CharacterBase
+//======================================================================================================================
+// Game_CharacterBase
+//======================================================================================================================
 var _FS_GCB_initMembers = Game_CharacterBase.prototype.initMembers;
 Game_CharacterBase.prototype.initMembers = function () {
     _FS_GCB_initMembers.call(this);
