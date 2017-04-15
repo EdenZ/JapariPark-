@@ -86,7 +86,7 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
     this._cropStates[eventId] = new CropState(cropType);
     $gameParty.loseItem($dataItems[cropType.seedId], 1);
     this.drawCropTile(eventId, 88);
-    this.startActionWait(1);
+    $gamePlayer.setProcessBar(1);
 };
 
 /**
@@ -99,7 +99,7 @@ FriendFarmSystem.prototype.watering = function (eventId) {
         return;
     }
     $gamePlayer.requestBalloon(6);
-    this.startActionWait(3);
+    $gamePlayer.setProcessBar(3);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
 };
@@ -283,6 +283,71 @@ FriendFarmSystem.prototype.dayChangeProcess = function (day) {
 };
 
 //======================================================================================================================
+// 显示读条
+//======================================================================================================================
+function Sprite_ProcessBar() {
+    this.initialize.apply(this, arguments);
+}
+
+Sprite_ProcessBar.prototype = Object.create(Sprite_Base.prototype);
+Sprite_ProcessBar.prototype.constructor = Sprite_ProcessBar;
+
+Sprite_ProcessBar.prototype.initialize = function() {
+    Sprite_Base.prototype.initialize.call(this);
+    this.initMembers();
+    this.loadBitmap();
+};
+
+Sprite_ProcessBar.prototype.initMembers = function() {
+    this._balloonId = 0;
+    this._duration = 0;
+    this.anchor.x = 0.5;
+    this.anchor.y = 1;
+    this.z = 7;
+};
+
+Sprite_ProcessBar.prototype.loadBitmap = function() {
+    this.bitmap = ImageManager.loadSystem('ProcessBar');
+    this.setFrame(0, 0, 0, 0);
+};
+
+Sprite_ProcessBar.prototype.setup = function(durationInSec) {
+    this._balloonId = 1;
+    this._duration = durationInSec * 60;
+    this._speed = this._duration / 3;
+};
+
+Sprite_ProcessBar.prototype.update = function() {
+    Sprite_Base.prototype.update.call(this);
+    if (this._duration > 0) {
+        this._duration--;
+        if (this._duration > 0) {
+            this.updateFrame();
+        }
+    }
+};
+
+Sprite_ProcessBar.prototype.updateFrame = function() {
+    var w = 48;
+    var h = 48;
+    var sx = this.frameIndex() * w;
+    var sy = (this._balloonId - 1) * h;
+    this.setFrame(sx, sy, w, h);
+};
+
+Sprite_ProcessBar.prototype.frameIndex = function() {
+    var index = this._duration / this._speed;
+    if (Math.floor(index) > 2) {
+        return 0;
+    }
+    return 2 - Math.max(Math.floor(index), 0);
+};
+
+Sprite_ProcessBar.prototype.isPlaying = function() {
+    return this._duration > 0;
+};
+
+//======================================================================================================================
 // 实时作物状态
 //======================================================================================================================
 /**
@@ -354,30 +419,93 @@ DayTimeSystem.prototype.onMinuteChange = function () {
 //======================================================================================================================
 // CORE修改
 //======================================================================================================================
-/**
- * 地图初始化时：
- * 1. 农田更新作物贴图
- * @type {*}
- * @private
- */
-var _farm_system_gameMap_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function(mapId) {
-    _farm_system_gameMap_setup.call(this, mapId);
-    _friendFarmSystem.setup($gameMap._mapId);
-};
-
 var FS_SM_create = Scene_Map.prototype.create;
 Scene_Map.prototype.create = function () {
     FS_SM_create.call(this);
     _friendFarmSystem.currentSceneMap = this;
-    console.log($gameMap._mapId);
-    _friendFarmSystem.setup($gameMap._mapId);
+    var mapId = this._transfer ? $gamePlayer.newMapId() : $gameMap.mapId();
+    _friendFarmSystem.setup(mapId);
 };
 
 var _FS_GP_canMove = Game_Player.prototype.canMove;
 Game_Player.prototype.canMove = function () {
-    if (_friendFarmSystem._wait > 0) {
+    if ($gamePlayer.isProcessBarPlaying()) {
         return false;
     }
     return _FS_GP_canMove.call(this);
+};
+
+//读条图像
+
+//Game_CharacterBase
+var _FS_GCB_initMembers = Game_CharacterBase.prototype.initMembers;
+Game_CharacterBase.prototype.initMembers = function () {
+    _FS_GCB_initMembers.call(this);
+    this._processBar = 0;
+    this._durationInSec = 0;
+};
+
+Game_CharacterBase.prototype.setProcessBar = function (durationInSec) {
+    this._durationInSec = durationInSec;
+    this._processBar = 1;
+};
+
+Game_CharacterBase.prototype.startProcessBar = function () {
+    this._processBar = 0;
+    this._durationInSec = 0;
+    this._processBarPlaying = true;
+};
+
+Game_CharacterBase.prototype.isProcessBarPlaying = function () {
+    return this._processBar > 0 || this._processBarPlaying;
+};
+
+Game_CharacterBase.prototype.endProcessBar = function () {
+    this._processBar = 0;
+    this._durationInSec = 0;
+    this._processBarPlaying = false;
+};
+
+//Sprite_Character
+var _FS_SC_setupBalloon = Sprite_Character.prototype.setupBalloon;
+Sprite_Character.prototype.setupBalloon = function () {
+    _FS_SC_setupBalloon.call(this);
+    if (this._character._processBar > 0) {
+        this.startProcessBar();
+        this._character.startProcessBar();
+    }
+};
+
+Sprite_Character.prototype.startProcessBar = function () {
+    if (!this._processBarSprite) {
+        this._processBarSprite = new Sprite_ProcessBar();
+    }
+    this._processBarSprite.setup(this._character._durationInSec);
+    this.parent.addChild(this._processBarSprite);
+};
+
+var _FS_SC_updateBalloon = Sprite_Character.prototype.updateBalloon;
+Sprite_Character.prototype.updateBalloon = function () {
+    _FS_SC_updateBalloon.call(this);
+    this.updateProcessBar();
+};
+
+Sprite_Character.prototype.updateProcessBar = function () {
+    if (this._processBarSprite) {
+        this._processBarSprite.x = this.x;
+        this._processBarSprite.y = this.y - this.height;
+        if (!this._processBarSprite.isPlaying()) this.endProcessBar();
+    }
+};
+
+Sprite_Character.prototype.endProcessBar = function () {
+    if (this._processBarSprite) {
+        this.parent.removeChild(this._processBarSprite);
+        this._processBarSprite = null;
+        this._character.endProcessBar();
+    }
+};
+
+Sprite_Character.prototype.isProcessBarPlaying = function () {
+    return !!this._processBarSprite;
 };
