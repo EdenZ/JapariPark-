@@ -29,7 +29,7 @@ SystemTimer.prototype.onTimeChange = function () {
 // Sleeping: decrease HP and increase MP
 //======================================================================================================================
 var sleep_HP_cost = -45;
-var sleep_MP_gain = 50;
+var sleep_MP_gain = 60;
 var FSS_DTS_passDayBySleep = DayTimeSystem.prototype.passDayBySleep;
 DayTimeSystem.prototype.passDayBySleep = function () {
     FSS_DTS_passDayBySleep.call(this);

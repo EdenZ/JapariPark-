@@ -4,5 +4,6 @@ var $plugins =
 [
 {"name":"TimeSystem","status":true,"description":"Time system","parameters":{"debug":"false"}},
 {"name":"FriendStateSystem","status":true,"description":"Friend State Controller","parameters":{"debug":"false"}},
-{"name":"FarmingSystem","status":true,"description":"Farm System","parameters":{"debug":"false"}}
+{"name":"FarmingSystem","status":true,"description":"Farm System","parameters":{"debug":"false"}},
+{"name":"CookingSystem","status":true,"description":"Cooking System","parameters":{"debug":"false"}}
 ];
