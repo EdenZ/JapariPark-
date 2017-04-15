@@ -247,6 +247,7 @@ FriendFarmSystem.prototype.dayChangeProcess = function (day) {
         //浇水状态重置
         this._cropStates[n].daily = false;
     }
+    this.setup($gameMap.mapId());
 };
 
 //======================================================================================================================
