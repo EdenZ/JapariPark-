@@ -59,7 +59,9 @@ FriendCookingSystem.onEventCall = function (caller) {
     choices.push('取消');
     $gameMessage.setChoices(choices, 0, choices.length - 1);
     $gameMessage.setChoiceCallback(function (choice) {
-        this.onCooking(choices[choice]);
+        if (choice !== choices.length - 1) {
+            this.onCooking(choices[choice]);
+        }
     }.bind(this))
 };
 
