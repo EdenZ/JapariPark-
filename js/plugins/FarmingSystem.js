@@ -14,11 +14,33 @@
  * @param 产物物品ID
  * @desc 把所有产物ID输入到这里,用空格分开
  * @default
+ *
+ * @param 播种精力消耗
+ * @desc
+ * @default 8
+ *
+ * @param 播种读条时间
+ * @desc 现实秒
+ * @default 1
+ *
+ * @param 浇水精力消耗
+ * @desc
+ * @default 2
+ *
+ * @param 浇水读条时间
+ * @desc 现实秒
+ * @default 3
  */
 
 //======================================================================================================================
-// 常数
+// 常数和参数
 //======================================================================================================================
+FriendCore._farmParams = PluginManager.parameters('FarmingSystem');
+FriendCore._seedingMPCost = Number(FriendCore._farmParams['播种精力消耗']);
+FriendCore._seedingTiming = Number(FriendCore._farmParams['播种读条时间']);
+FriendCore._wateringMPCost = Number(FriendCore._farmParams['浇水精力消耗']);
+FriendCore._wateringTiming = Number(FriendCore._farmParams['浇水读条时间']);
+
 //农场地图编号
 const FARM_MAP_ID = 1;
 
@@ -87,14 +109,14 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
         case '取消':
             return;
     }
-    if (!this.checkAndConsumeMP(8))  {
+    if (!this.checkAndConsumeMP(FriendCore._seedingMPCost))  {
         $gamePlayer.requestBalloon(7);
         return;
     }
+    $gamePlayer.setProcessBar(FriendCore._seedingTiming);
     this._cropStates[eventId] = new CropState(cropType);
     $gameParty.loseItem($dataItems[cropType.seedId], 1);
     this.drawCropTile(eventId, 88);
-    $gamePlayer.setProcessBar(1);
 };
 
 /**
@@ -102,11 +124,11 @@ FriendFarmSystem.prototype.seeding = function (eventId, type) {
  * @param eventId
  */
 FriendFarmSystem.prototype.watering = function (eventId) {
-    if (!this.checkAndConsumeMP(2)) {
+    if (!this.checkAndConsumeMP(FriendCore._wateringMPCost)) {
         $gamePlayer.requestBalloon(7);
         return;
     }
-    $gamePlayer.setProcessBar(3);
+    $gamePlayer.setProcessBar(FriendCore._wateringTiming);
     this._cropStates[eventId].daily = true;
     this.drawCropTile(eventId, 88);
 };
@@ -116,7 +138,6 @@ FriendFarmSystem.prototype.watering = function (eventId) {
  * @param {Number} eventId
  */
 FriendFarmSystem.prototype.harvest = function (eventId) {
-    this.startActionWait(1);
     var amount = this._cropStates[eventId].type.amountOfProduct;
     $gameParty.gainItem($dataItems[this._cropStates[eventId].type.productId], amount);
     $gameMessage.add('收获了' + String(amount) + '个' + this._cropStates[eventId].type.name);
@@ -226,38 +247,12 @@ FriendFarmSystem.prototype.chooseSeed = function (eventId) {
 /**
  * 消耗MP
  * @param amount
- * @return true or false
+ * @return boolean
  */
 FriendFarmSystem.prototype.checkAndConsumeMP = function (amount) {
-    if ($gameActors.actor(mainActorID)._mp < amount) return false;
+    if ($gameActors.actor(FriendCore._mainActorID)._mp < amount) return false;
     farmConsumeMp(amount);
     return true;
-};
-
-/**
- * 此地的作物是否成熟
- * @param {Number} eventId
- * @returns {boolean}
- */
-FriendFarmSystem.prototype.isDone = function (eventId) {
-    return _friendFarmSystem._cropStates[eventId].done;
-};
-
-/**
- * 等待动作结束
- * @param duration
- */
-FriendFarmSystem.prototype.startActionWait = function (duration) {
-    this._wait = duration;
-};
-
-/**
- * 更新等待时间
- */
-FriendFarmSystem.prototype.updateActionWait = function () {
-    if (this._wait > 0) {
-        this._wait--;
-    }
 };
 
 /**
@@ -418,12 +413,6 @@ var _farm_system_onDayChange = DayTimeSystem.prototype.onDayChange;
 DayTimeSystem.prototype.onDayChange = function () {
     _farm_system_onDayChange.call(this);
     _friendFarmSystem.dayChangeProcess(this.getDay());
-};
-
-var _FS_DTS_onMinuteChange = DayTimeSystem.prototype.onMinuteChange;
-DayTimeSystem.prototype.onMinuteChange = function () {
-    _FS_DTS_onMinuteChange.call(this);
-    _friendFarmSystem.updateActionWait();
 };
 
 //======================================================================================================================
