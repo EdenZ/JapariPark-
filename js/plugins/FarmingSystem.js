@@ -175,7 +175,9 @@ FriendFarmSystem.prototype.drawCropColor = function (eventId, colorTone) {
  * Event把柄
  * @param {Number} eventId
  */
-FriendFarmSystem.prototype.onEventCall = function (eventId) {
+FriendFarmSystem.prototype.onEventCall = function (caller) {
+    console.log(caller._eventId);
+    var eventId = caller._eventId;
     //空田,选种子
     if (this._cropStates[eventId] === 0) {
         this.chooseSeed(eventId);
