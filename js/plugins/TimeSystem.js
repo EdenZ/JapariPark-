@@ -47,11 +47,6 @@ var MONTH_NAME = ['十二月', '一月', '二月', '三月', '四月', '五月',
 //======================================================================================================================
 // 插件核心
 //======================================================================================================================
-//插件参数读取
-var dayTimeSystemParams = PluginManager.parameters('TimeSystem');
-//是否第一次启动游戏
-var init_game_start = true;
-
 function DayTimeSystem () {
     this.day = 1;
     this.hour = 6;
@@ -61,14 +56,6 @@ function DayTimeSystem () {
     this.year = 1;
     this._timer = new SystemTimer();
 }
-
-// Object.defineProperty(DayTimeSystem, '_timer', {
-//     writable: true
-// });
-
-Object.defineProperty(DayTimeSystem, '_day_Window', {
-    writable: true
-});
 
 var _dayTimeSystem = new DayTimeSystem();
 
@@ -314,11 +301,7 @@ var _Scene_Map_start = Scene_Map.prototype.start;
 Scene_Map.prototype.start = function () {
     _Scene_Map_start.call(this);
     this._day_Window = new Day_Window(0, 0);
-    _dayTimeSystem._day_Window = this._day_Window;
-    Object.defineProperty(_dayTimeSystem, '_day_Window', {
-        enumerable: false,
-        writable: true
-    });
+    FriendCore._day_Window = this._day_Window;
     this.addWindow(this._day_Window);
 };
 
@@ -342,7 +325,7 @@ Scene_Map.prototype.update = function () {
 var alias_Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
 Game_Screen.prototype.startFadeOut = function (duration) {
     alias_Game_Screen_startFadeOut.call(this, duration);
-    _dayTimeSystem._day_Window.hide();
+    FriendCore._day_Window.hide();
     _dayTimeSystem._timer._work = false;
 };
 
@@ -354,7 +337,7 @@ Game_Screen.prototype.startFadeOut = function (duration) {
 var alias_Game_Screen_startFadeIn = Game_Screen.prototype.startFadeIn;
 Game_Screen.prototype.startFadeIn = function (duration) {
     alias_Game_Screen_startFadeIn.call(this, duration);
-    _dayTimeSystem._day_Window.show();
+    FriendCore._day_Window.show();
     _dayTimeSystem._timer._work = true;
 };
 
