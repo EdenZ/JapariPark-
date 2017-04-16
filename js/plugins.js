@@ -4,6 +4,7 @@ var $plugins =
 [
 {"name":"FriendCore","status":true,"description":"Friend System Core","parameters":{"debug":"false"}},
 {"name":"TimeSystem","status":true,"description":"Time system","parameters":{"debug":"false"}},
-{"name":"FriendStateSystem","status":true,"description":"Friend State Controller","parameters":{"debug":"false"}},
-{"name":"FarmingSystem","status":true,"description":"Farm System","parameters":{"debug":"false"}}
+{"name":"FriendStateSystem","status":true,"description":"Friend State Controller","parameters":{"debug":"false","掉血率":"15","睡觉掉血量":"45","睡觉回复精力":"60","主角角色ID":"5"}},
+{"name":"FarmingSystem","status":true,"description":"Farm System","parameters":{"debug":"false","种子物品ID":"","产物物品ID":"","播种精力消耗":"8","播种读条时间":"1","浇水精力消耗":"2","浇水读条时间":"3"}},
+{"name":"CookingSystem","status":true,"description":"Cooking System","parameters":{"debug":"false"}}
 ];
