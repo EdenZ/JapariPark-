@@ -6,6 +6,14 @@
  * @param debug
  * @desc true of false
  * @default false
+ *
+ * @param 种子物品ID
+ * @desc 把所有种子ID输入到这里,用空格分开
+ * @default
+ *
+ * @param 产物物品ID
+ * @desc 把所有产物ID输入到这里,用空格分开
+ * @default
  */
 
 //======================================================================================================================
@@ -306,16 +314,17 @@ Sprite_ProcessBar.prototype.initMembers = function() {
 };
 
 Sprite_ProcessBar.prototype.loadBitmap = function() {
-    this.bitmap = ImageManager.loadSystem('ProcessBar');
+    this.bitmap = ImageManager.loadSystem('FriendSpriteSheet');
     this.setFrame(0, 0, 0, 0);
 };
 
 Sprite_ProcessBar.prototype.setup = function(durationInSec) {
     this._balloonId = 1;
     this._duration = durationInSec * 60;
-    this._speed = this._duration / 3;
+    this._speed = this._duration / 8;
 };
 
+//Called as a child
 Sprite_ProcessBar.prototype.update = function() {
     Sprite_Base.prototype.update.call(this);
     if (this._duration > 0) {
@@ -326,6 +335,7 @@ Sprite_ProcessBar.prototype.update = function() {
     }
 };
 
+//Picking the image
 Sprite_ProcessBar.prototype.updateFrame = function() {
     var w = 48;
     var h = 48;
@@ -336,10 +346,10 @@ Sprite_ProcessBar.prototype.updateFrame = function() {
 
 Sprite_ProcessBar.prototype.frameIndex = function() {
     var index = this._duration / this._speed;
-    if (Math.floor(index) > 2) {
+    if (Math.floor(index) > 7) {
         return 0;
     }
-    return 2 - Math.max(Math.floor(index), 0);
+    return 7 - Math.max(Math.floor(index), 0);
 };
 
 Sprite_ProcessBar.prototype.isPlaying = function() {
@@ -420,12 +430,12 @@ DayTimeSystem.prototype.onMinuteChange = function () {
 // CORE修改
 //
 //======================================================================================================================
+//刷新作物图像
 var _FS_SM_start = Scene_Map.prototype.start;
 Scene_Map.prototype.start = function () {
     _FS_SM_start.call(this);
     _friendFarmSystem.currentSceneMap = this;
     _friendFarmSystem.setup($gameMap._mapId);
-    console.log($gameMap._mapId);
 };
 
 var _FS_GP_canMove = Game_Player.prototype.canMove;
@@ -469,7 +479,9 @@ Game_CharacterBase.prototype.endProcessBar = function () {
     this._processBarPlaying = false;
 };
 
-//Sprite_Character
+//======================================================================================================================
+// Sprite_Character
+//======================================================================================================================
 var _FS_SC_setupBalloon = Sprite_Character.prototype.setupBalloon;
 Sprite_Character.prototype.setupBalloon = function () {
     _FS_SC_setupBalloon.call(this);
