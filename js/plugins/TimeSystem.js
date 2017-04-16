@@ -61,6 +61,15 @@ function DayTimeSystem () {
     this.year = 1;
     this._timer = new SystemTimer();
 }
+
+// Object.defineProperty(DayTimeSystem, '_timer', {
+//     writable: true
+// });
+
+Object.defineProperty(DayTimeSystem, '_day_Window', {
+    writable: true
+});
+
 var _dayTimeSystem = new DayTimeSystem();
 
 /**
@@ -258,9 +267,6 @@ Day_Window.prototype.constructor = Day_Window;
  */
 Day_Window.prototype.initialize = function (x, y) {
     Window_Base.prototype.initialize.call(this, x, y, this.windowWidth(), this.windowHeight());
-    //this.drawIcon(...);
-    //this.drawText(...);
-    //...
     this._lastMinute = -1;
     this._lastHour = -1;
     this.refresh();
@@ -307,9 +313,12 @@ Day_Window.prototype.refresh = function () {
 var _Scene_Map_start = Scene_Map.prototype.start;
 Scene_Map.prototype.start = function () {
     _Scene_Map_start.call(this);
-    //新建时间窗口并加入scene map中
     this._day_Window = new Day_Window(0, 0);
     _dayTimeSystem._day_Window = this._day_Window;
+    Object.defineProperty(_dayTimeSystem, '_day_Window', {
+        enumerable: false,
+        writable: true
+    });
     this.addWindow(this._day_Window);
 };
 
@@ -355,16 +364,16 @@ Game_Screen.prototype.startFadeIn = function (duration) {
  * @type {*}
  * @private
  */
-var _time_system_gameMap_setup = Game_Map.prototype.setup;
-Game_Map.prototype.setup = function (mapId) {
-    _time_system_gameMap_setup.call(this, mapId);
+var _time_system_gameMap_setup = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function () {
+    _time_system_gameMap_setup.call(this);
     //游戏开始时，计时
     if (init_game_start) {
         _dayTimeSystem._timer.start();
         _dayTimeSystem._timer._work = true;
         init_game_start = false;
     }
-    if (INDOOR_MAPID.indexOf(mapId) === -1) {
+    if (INDOOR_MAPID.indexOf($gameMap._mapId) === -1) {
         _dayTimeSystem.setTint();
     } else {
         $gameScreen.startTint([0, 0, 0, 0], 0);

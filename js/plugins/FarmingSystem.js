@@ -173,10 +173,9 @@ FriendFarmSystem.prototype.drawCropColor = function (eventId, colorTone) {
 
 /**
  * Event把柄
- * @param {Number} eventId
+ * @param {Object} caller
  */
 FriendFarmSystem.prototype.onEventCall = function (caller) {
-    console.log(caller._eventId);
     var eventId = caller._eventId;
     //空田,选种子
     if (this._cropStates[eventId] === 0) {
@@ -437,6 +436,10 @@ var _FS_SM_start = Scene_Map.prototype.start;
 Scene_Map.prototype.start = function () {
     _FS_SM_start.call(this);
     _friendFarmSystem.currentSceneMap = this;
+    Object.defineProperty(_friendFarmSystem, 'currentSceneMap', {
+        enumerable: false,
+        writable: true
+    });
     _friendFarmSystem.setup($gameMap._mapId);
 };
 
