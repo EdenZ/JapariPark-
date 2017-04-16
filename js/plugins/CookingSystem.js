@@ -7,87 +7,69 @@
  * @desc true of false
  * @default false
  */
+//======================================================================================================================
+// 常数和参数
+//======================================================================================================================
 
-//物品数量
-//amount = $gameParty.numItems($dataItems[itemID]);
 
-//增加或减少物品(amount可以正负)
-//$gameParty.gainItem($dataItems[itemID], amount);
 
-function CookingSystem(){
-
+//======================================================================================================================
+// Cooking核心
+//======================================================================================================================
+function FriendCookingSystem () {
+    throw new Error('This is a static class');
 }
-var _CookingSystem = new CookingSystem();
+FriendCookingSystem._dataLoad = false;
 
-/**
- *烹饪
- *@param type
- */
-CookingSystem.cooking = function (type) {
-    var foodType;
-    switch (type) {
-        //罗卜
-        case this._foodMenu.carrotsala.name:
-            foodType = this._foodMenu.carrotsala;
-            break;
-
-        //土豆
-        case this._foodMenu.bakedpotato.name:
-            foodType = this._foodMenu.bakedpotato;
-            break;
-
-        //黑加仑
-        case this._foodMenu.blueberryjuice.name:
-            foodType = this._foodMenu.blueberryjuice;
-            break;
-
-        case '取消':
-            return;
-    }
-        return;
-    }
-    need = $gameParty.numItems($dataItems[foodType.needID]);
-    if (need<foodType.amount) {
-    	$gameMessage.add('食材不足');
-        return;
-    }
-    $gameParty.loseItem($dataItems[foodType.needID], foodType.amount);
-    $gamePlayer.setProcessBar(3);
-    $gameParty.gainItem($dataItems[foodType.foodID], 1);
-
+FriendCookingSystem.isDataLoaded = function () {
+    return this._dataLoad;
 };
 
- /**
- * 选择窗口
- */
-CookingSystem.MenuChoose = function () {
-    var choices = [];
-    for (var food in _foodMenu[]) {
-
-        var obj = this._foodMenu[food];
-            choices.push(obj.name);
+FriendCookingSystem.onCooking = function (foodName) {
+    if (!this.onPrepareCooking(foodName)) {
+        $gamePlayer.requestBalloon(7);
+        return;
     }
+    $gameParty.gainItem($dataItems[FriendCore._dataFood[foodName]._itemId], 1);
+    $gamePlayer.requestBalloon(3);
+};
 
+FriendCookingSystem.onPrepareCooking = function (foodName) {
+    var receipt = FriendCore._dataFood[foodName]._receipt;
+    for (var i = 0; i < receipt.length; i++) {
+        if (!this.checkItems(receipt[i])) {
+            return false;
+        }
+    }
+    for (var n = 0; n < receipt.length; n++) {
+        $gameParty.gainItem($dataItems[receipt[n].itemId], -receipt[n].amount);
+    }
+    return true;
+};
+
+FriendCookingSystem.checkItems = function (receiptItem) {
+    return $gameParty.numItems($dataItems[receiptItem.itemId]) >= receiptItem.amount;
+};
+
+FriendCookingSystem.onEventCall = function (caller) {
+    var choices = [];
+    for (var key in FriendCore._dataFood) {
+        choices.push(key);
+    }
     choices.push('取消');
-
     $gameMessage.setChoices(choices, 0, choices.length - 1);
     $gameMessage.setChoiceCallback(function (choice) {
-        CookingSystem.cooking(choices[choice]);
-        }
-    )
+        this.onCooking(choices[choice]);
+    }.bind(this))
 };
 
-function foodMenu(name,foodID,gainhp,gainmp,needID,amount){
-	this.name = name;
-	this.foodID = foodID;
-	this.gainhp = gainhp;
-	this.gainmp = gainmp;
-	this.needID = needID;
-	this.amount = amount;
+//======================================================================================================================
+// 烹饪数据
+//======================================================================================================================
+function FoodInfo(name, receipt, hpGain, mpGain, itemId) {
+    this._name = name;
+    this._receipt = receipt;
+    this._hpGain = hpGain;
+    this._mpGain = mpGain;
+    this._itemId = itemId;
 }
-
-var _foodMenu =new foodMenu{};
-var _foodMenu.carrotsala = new foodMenu('carrotsala',10,60,0,3,5);
-var _foodMenu.bakedpotato = new foodMenu('bakedpotato',11,90,0,5,4);
-var _foodMenu.blueberryjuice = new foodMenu('blueberryjuice',12,0,30,7,10);
-

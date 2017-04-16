@@ -52,7 +52,6 @@ const FARM_MAP_ID = 1;
  * @constructor
  */
 function FriendFarmSystem () {
-    this._wait = 0;
     this._cropStates = [];
     for (var n = 0; n <= 100; n++) {
         this._cropStates.push(0);
