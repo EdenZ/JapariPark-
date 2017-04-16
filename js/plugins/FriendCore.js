@@ -66,35 +66,17 @@ Scene_Map.prototype.start = function () {
 //======================================================================================================================
 // 存档
 //======================================================================================================================
-DataManager.makeSaveContents = function() {
-    // A save data does not contain $gameTemp, $gameMessage, and $gameTroop.
-    var contents = {};
-    contents.system       = $gameSystem;
-    contents.screen       = $gameScreen;
-    contents.timer        = $gameTimer;
-    contents.switches     = $gameSwitches;
-    contents.variables    = $gameVariables;
-    contents.selfSwitches = $gameSelfSwitches;
-    contents.actors       = $gameActors;
-    contents.party        = $gameParty;
-    contents.map          = $gameMap;
-    contents.player       = $gamePlayer;
+var _FC_DM_makeSaveContents = DataManager.makeSaveContents;
+DataManager.makeSaveContents = function () {
+    var contents = _FC_DM_makeSaveContents.call(this);
     contents.friendFarm   = _friendFarmSystem;
     contents.timeSystem   = _dayTimeSystem;
     return contents;
 };
 
-DataManager.extractSaveContents = function(contents) {
-    $gameSystem        = contents.system;
-    $gameScreen        = contents.screen;
-    $gameTimer         = contents.timer;
-    $gameSwitches      = contents.switches;
-    $gameVariables     = contents.variables;
-    $gameSelfSwitches  = contents.selfSwitches;
-    $gameActors        = contents.actors;
-    $gameParty         = contents.party;
-    $gameMap           = contents.map;
-    $gamePlayer        = contents.player;
+var _FC_DM_extractSaveContents = DataManager.extractSaveContents;
+DataManager.extractSaveContents = function (contents) {
+    _FC_DM_extractSaveContents.call(this, contents);
     _friendFarmSystem  = contents.friendFarm;
-     _dayTimeSystem     = contents.timeSystem;
+    _dayTimeSystem     = contents.timeSystem;
 };
