@@ -2,6 +2,7 @@
  * @plugindesc Friend System Core
  * @author Eden
  * @help
+ * @requiredAssets img/system/FriendSpriteSheet
  *
  * @param debug
  * @desc true of false
